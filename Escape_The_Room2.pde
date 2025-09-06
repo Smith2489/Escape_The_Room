@@ -2,20 +2,63 @@ import processing.sound.*;
 import java.io.*;
 import java.util.*;
 
-final String path = "Escape_The_Room2/graphics/";
-final String extend = ".png";
-final int textSize = 32;
+final String PATH = "Escape_The_Room2/graphics/";
+final String EXTEND = ".png";
+
+
+//Red text characters
+final char RED_ONE = 34;
+final char RED_U = 35;
+final char RED_P = 36;
+final char RED_COLON = 47;
+
+
+final byte GO_SIZE = 24;
+final byte MAX_LEVEL = 7;
+
+//IDs for the background tiles
+final byte BG_GROUND = 1;
+final byte BG_COIN = 2;
+final byte BG_EXIT = 3;
+final byte BG_PILLAR = 4;
+final byte BG_VENT = 5;
+final byte BG_SCORE = 6;
+final byte BG_TELE = 7;
+
+//IDs for moving objects
+final byte OBJ_ROBOT = 1;
+final byte OBJ_ROCKET = 2;
+final byte OBJ_PLAT_VERT = 3;
+final byte OBJ_PLAT_HORIZ = 4;
+final byte OBJ_ONE_UP = 5;
+final byte OBJ_PLUS_ONE = 6;
+
+//Indices for referencing specific graphics
+final byte INSIDE_GROUND = 32;
+final byte INSIDE_PILLAR_TOP = 59;
+final byte INSIDE_PILLAR_STEM = 60;
+final byte OUTSIDE_GROUND = 65;
+final byte OUTSIDE_PILLAR_STEM = 66;
+
+
+final int TEXT_SIZE = 32;
+
+
 final short MIN_KEY[] = {0xF0, 0x9E, 0xBE};
 final short MAX_KEY[] = {0xFF, 0xCD, 0xEC};
-final byte GO_SIZE = 24;
+
 final short GO_MID_X = (short)((800 - 9*GO_SIZE) >> 1);
 final short GO_MID_Y = (short)((600 - GO_SIZE) >> 1);
-final byte MAX_LEVEL = 7;
-final byte[] cutIDs = {1, 2};
-final byte[] textLengths = {6, 12, 11, 9, 12, 9, 12, 6, 9, 7, 7, 13, 11, 16, 5, 1};
-final short[] introInputs = {2177, 127, 1025, 127, 2303};
-final short[] cutsceneInputs = {2177, 15, 4111, 170, 4111, 170, 4111, 170, 1279};
-final short[] attractModeInputs = {38, 2086, 6159, 2077, 6159, 2065, 6154, 2061, 8, 2053, 6155, 2087, 31, 1086, 7, 2139, 1034, 61, 4126, 153, 1031, 5141, 1050, 5137, 1078, 85, 1028, 5142, 1027, 79, 1052}; 
+
+
+final byte[] CUT_IDS = {OBJ_ROBOT, OBJ_ROCKET};
+
+final byte[] TEXT_LENGTHS = {6, 12, 11, 9, 12, 9, 12, 6, 9, 7, 7, 13, 11, 16, 5, 1};
+
+
+final short[] INTRO_INPUTS = {2177, 127, 1025, 127, 2303};
+final short[] ENDING_INPUTS = {2177, 15, 4111, 170, 4111, 170, 4111, 170, 1279};
+final short[] ATTRACT_MODE_INPUTS = {38, 2086, 6159, 2077, 6159, 2065, 6154, 2061, 8, 2053, 6155, 2087, 31, 1086, 7, 2139, 1034, 61, 4126, 153, 1031, 5141, 1050, 5137, 1078, 85, 1028, 5142, 1027, 79, 1052}; 
 
 Graphics[] characters = new Graphics[67]; //0 = space (ASCII 32), 57 = Z (ASCII 90), 2 - 4 and 15 = red characters 1, U, P, : (TAKE UP ASCII 34 - 36 and 47)
 Graphics[] rocketFrames = new Graphics[4];
@@ -93,7 +136,7 @@ short[][] frequencies = {{0, 0 , 0, 0 ,0 ,0}, {0, 0, 0, 0, 0, 0}};
 14 = "PAUSE"
 15 = "?"
 */
-char[] score = {34, 35, 36, 47, ' ', '0', '0', '0', '0', '0', '0', '0', '9', '9', '9', '9' , '9', '7', '5'};
+char[] score = {RED_ONE, RED_U, RED_P, RED_COLON, ' ', '0', '0', '0', '0', '0', '0', '0', '9', '9', '9', '9' , '9', '7', '5'};
 char[] highScore = {'H','I', ':', ' ', '0', '0', '0', '0', '0', '0', '0', 0};
 char[] highComp = {'0', '0', '0', '0', '0', '0', '0', 0};
 char[] lives = {'L', 'I', 'V', 'E', 'S', ':', ' ', '0', '0', 0};
@@ -107,7 +150,7 @@ char[][] gameText = {{'>', 'G', 'A', 'M', 'E', ' ', 'A', 0, 0, 0, 0, 0, 0, 0},
                      {' ', 'D', 'E', 'L', 'E', 'T', 'E', ' ', 'S', 'C', 'O', 'R', 'E', 0},
                      {' ', 'L', 'E', 'A', 'V', 'E', 0, 0, 0, 0, 0, 0, 0, 0}};
 char[] enterText = {'P', 'R', 'E', 'S', 'S', ' ', 'E', 'N', 'T', 'E', 'R', 0};
-char[][] cutText = {{'C', 'O', 'N', 'G', 'R', 'A', 'D', 'U', 'L', 'A', 'T', 'I', 'O', 'N', 'S', '!', 0},
+char[][] cutText = {{'C', 'O', 'N', 'G', 'R', 'A', 'T', 'U', 'L', 'A', 'T', 'I', 'O', 'N', 'S', '!', 0},
                     {'Y', 'O', 'U', ' ', 'E', 'S', 'C', 'A', 'P', 'E', 'D', '!', 0, 0, 0, 0},
                     {'U', 'H', ' ', 'O', 'H', '!', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}};
 char[] pauseText = {'P', 'A', 'U', 'S', 'E', 0};
@@ -135,7 +178,7 @@ void setup(){
         tempScore = "0020000";
         writer.close();
       }
-      for(byte i = 4; i < textLengths[2]; i++)
+      for(byte i = 4; i < TEXT_LENGTHS[2]; i++)
         highScore[i] = highComp[i-4] = tempScore.charAt(i-4);
     }
     reader.close();
@@ -225,76 +268,76 @@ void setup(){
   saw.amp(vol);
   sqr.amp(vol);
   characters[0] = new Graphics(setImage((byte)8, (byte)8, (short)255, (short)174, (short)201), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  characters[1] = new Graphics(loadImage(path+"Text/White/!"+extend), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  characters[2] = new Graphics(loadImage(path+"Text/Red/1"+extend), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  characters[3] = new Graphics(loadImage(path+"Text/Red/U"+extend), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  characters[4] = new Graphics(loadImage(path+"Text/Red/P"+extend), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters[1] = new Graphics(loadImage(PATH+"Text/White/!"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters[2] = new Graphics(loadImage(PATH+"Text/Red/1"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters[3] = new Graphics(loadImage(PATH+"Text/Red/U"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters[4] = new Graphics(loadImage(PATH+"Text/Red/P"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
   for(int i = 0; i < 3; i++)
-    characters[i+5] = new Graphics(loadImage(path+"Background/coin"+char(i+49)+extend), MIN_KEY, MAX_KEY, false, (isSmoothed & 1) == 1);
-  characters[8] = new Graphics(loadImage(path+"Text/White/openParen"+extend), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  characters[9] = new Graphics(loadImage(path+"Text/White/closeParen"+extend), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+    characters[i+5] = new Graphics(loadImage(PATH+"Background/coin"+char(i+49)+EXTEND), MIN_KEY, MAX_KEY, false, (isSmoothed & 1) == 1);
+  characters[8] = new Graphics(loadImage(PATH+"Text/White/openParen"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters[9] = new Graphics(loadImage(PATH+"Text/White/closeParen"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
   characters[10] = characters[0];
   characters[11] = characters[0];
-  characters[12] = new Graphics(loadImage(path+"Menu/sound1"+extend), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  characters[13] = new Graphics(loadImage(path+"Text/White/minus"+extend), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  characters[14] = new Graphics(loadImage(path+"Menu/sound-1"+extend), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  characters[15] = new Graphics(loadImage(path+"Text/Red/colon"+extend), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters[12] = new Graphics(loadImage(PATH+"Menu/sound1"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters[13] = new Graphics(loadImage(PATH+"Text/White/minus"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters[14] = new Graphics(loadImage(PATH+"Menu/sound-1"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters[15] = new Graphics(loadImage(PATH+"Text/Red/colon"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
   for(int i = 0; i < 10; i++)
-    characters[i+16] = new Graphics(loadImage(path+"Text/White/"+char(i+48)+extend), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  characters[26] = new Graphics(loadImage(path+"Text/White/colon"+extend), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  characters[27] = new Graphics(loadImage(path+"Objects/1UP"+extend), MIN_KEY, MAX_KEY, false, (isSmoothed & 1) == 1);
-  characters[28] = new Graphics(loadImage(path+"Objects/enGround"+extend), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  characters[29] = new Graphics(loadImage(path+"Objects/platform"+extend), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  characters[30] = new Graphics(loadImage(path+"Text/White/greater"+extend), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  characters[31] = new Graphics(loadImage(path+"Text/White/question"+extend), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  characters[32] = new Graphics(loadImage(path+"Background/ground"+extend), MIN_KEY, MAX_KEY, false, (isSmoothed & 1) == 1);
-  characters[33] = new Graphics(loadImage(path+"Text/White/A"+extend), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  characters[34] = new Graphics(loadImage(path+"Text/White/B"+extend), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  characters[35] = new Graphics(loadImage(path+"Text/White/C"+extend), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  characters[36] = new Graphics(loadImage(path+"Text/White/D"+extend), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  characters[37] = new Graphics(loadImage(path+"Text/White/E"+extend), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  characters[38] = new Graphics(loadImage(path+"Background/goalPanel"+extend), MIN_KEY, MAX_KEY, false, (isSmoothed & 1) == 1);
-  characters[39] = new Graphics(loadImage(path+"Text/White/G"+extend), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  characters[40] = new Graphics(loadImage(path+"Text/White/H"+extend), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  characters[41] = new Graphics(loadImage(path+"Text/White/I"+extend), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  characters[42] = new Graphics(loadImage(path+"Background/points"+extend), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  characters[43] = new Graphics(loadImage(path+"Text/White/K"+extend), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  characters[44] = new Graphics(loadImage(path+"Text/White/L"+extend), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  characters[45] = new Graphics(loadImage(path+"Text/White/M"+extend), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  characters[46] = new Graphics(loadImage(path+"Text/White/N"+extend), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  characters[47] = new Graphics(loadImage(path+"Text/White/O"+extend), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  characters[48] = new Graphics(loadImage(path+"Text/White/P"+extend), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  characters[49] = new Graphics(loadImage(path+"Menu/title"+extend), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  characters[50] = new Graphics(loadImage(path+"Text/White/R"+extend), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  characters[51] = new Graphics(loadImage(path+"Text/White/S"+extend), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  characters[52] = new Graphics(loadImage(path+"Text/White/T"+extend), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  characters[53] = new Graphics(loadImage(path+"Text/White/U"+extend),MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  characters[54] = new Graphics(loadImage(path+"Text/White/V"+extend), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  characters[55] = new Graphics(loadImage(path+"Background/arrow1"+extend), MIN_KEY, MAX_KEY, false, (isSmoothed & 1) == 1);
-  characters[56] = new Graphics(loadImage(path+"Objects/plus1"+extend), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  characters[57] = new Graphics(loadImage(path+"Text/White/Y"+extend), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  characters[58] = new Graphics(loadImage(path+"Text/White/Z"+extend), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  characters[59] = new Graphics(loadImage(path+"Background/support1"+extend), MIN_KEY, MAX_KEY, false, (isSmoothed & 1) == 1);
-  characters[60] = new Graphics(loadImage(path+"Background/support2"+extend), MIN_KEY, MAX_KEY, false, (isSmoothed & 1) == 1);
-  characters[61] = new Graphics(loadImage(path+"Background/vent11"+extend), MIN_KEY, MAX_KEY, false, (isSmoothed & 1) == 1);
-  characters[62] = new Graphics(loadImage(path+"Background/vent1-1"+extend), MIN_KEY, MAX_KEY, false, (isSmoothed & 1) == 1);
-  characters[63] = new Graphics(loadImage(path+"Background/vent-11"+extend), MIN_KEY, MAX_KEY, false, (isSmoothed & 1) == 1);
-  characters[64] = new Graphics(loadImage(path+"Background/vent-1-1"+extend), MIN_KEY, MAX_KEY, false, (isSmoothed & 1) == 1);
-  characters[65] = new Graphics(loadImage(path+"Background/grass"+extend), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  characters[66] = new Graphics(loadImage(path+"Background/bark"+extend), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+    characters[i+16] = new Graphics(loadImage(PATH+"Text/White/"+char(i+48)+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters[26] = new Graphics(loadImage(PATH+"Text/White/colon"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters[27] = new Graphics(loadImage(PATH+"Objects/1UP"+EXTEND), MIN_KEY, MAX_KEY, false, (isSmoothed & 1) == 1);
+  characters[28] = new Graphics(loadImage(PATH+"Objects/enGround"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters[29] = new Graphics(loadImage(PATH+"Objects/platform"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters[30] = new Graphics(loadImage(PATH+"Text/White/greater"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters[31] = new Graphics(loadImage(PATH+"Text/White/question"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters[32] = new Graphics(loadImage(PATH+"Background/ground"+EXTEND), MIN_KEY, MAX_KEY, false, (isSmoothed & 1) == 1);
+  characters[33] = new Graphics(loadImage(PATH+"Text/White/A"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters[34] = new Graphics(loadImage(PATH+"Text/White/B"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters[35] = new Graphics(loadImage(PATH+"Text/White/C"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters[36] = new Graphics(loadImage(PATH+"Text/White/D"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters[37] = new Graphics(loadImage(PATH+"Text/White/E"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters[38] = new Graphics(loadImage(PATH+"Background/goalPanel"+EXTEND), MIN_KEY, MAX_KEY, false, (isSmoothed & 1) == 1);
+  characters[39] = new Graphics(loadImage(PATH+"Text/White/G"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters[40] = new Graphics(loadImage(PATH+"Text/White/H"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters[41] = new Graphics(loadImage(PATH+"Text/White/I"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters[42] = new Graphics(loadImage(PATH+"Background/points"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters[43] = new Graphics(loadImage(PATH+"Text/White/K"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters[44] = new Graphics(loadImage(PATH+"Text/White/L"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters[45] = new Graphics(loadImage(PATH+"Text/White/M"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters[46] = new Graphics(loadImage(PATH+"Text/White/N"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters[47] = new Graphics(loadImage(PATH+"Text/White/O"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters[48] = new Graphics(loadImage(PATH+"Text/White/P"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters[49] = new Graphics(loadImage(PATH+"Menu/title"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters[50] = new Graphics(loadImage(PATH+"Text/White/R"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters[51] = new Graphics(loadImage(PATH+"Text/White/S"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters[52] = new Graphics(loadImage(PATH+"Text/White/T"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters[53] = new Graphics(loadImage(PATH+"Text/White/U"+EXTEND),MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters[54] = new Graphics(loadImage(PATH+"Text/White/V"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters[55] = new Graphics(loadImage(PATH+"Background/arrow1"+EXTEND), MIN_KEY, MAX_KEY, false, (isSmoothed & 1) == 1);
+  characters[56] = new Graphics(loadImage(PATH+"Objects/plus1"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters[57] = new Graphics(loadImage(PATH+"Text/White/Y"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters[58] = new Graphics(loadImage(PATH+"Text/White/Z"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters[59] = new Graphics(loadImage(PATH+"Background/support1"+EXTEND), MIN_KEY, MAX_KEY, false, (isSmoothed & 1) == 1);
+  characters[60] = new Graphics(loadImage(PATH+"Background/support2"+EXTEND), MIN_KEY, MAX_KEY, false, (isSmoothed & 1) == 1);
+  characters[61] = new Graphics(loadImage(PATH+"Background/vent11"+EXTEND), MIN_KEY, MAX_KEY, false, (isSmoothed & 1) == 1);
+  characters[62] = new Graphics(loadImage(PATH+"Background/vent1-1"+EXTEND), MIN_KEY, MAX_KEY, false, (isSmoothed & 1) == 1);
+  characters[63] = new Graphics(loadImage(PATH+"Background/vent-11"+EXTEND), MIN_KEY, MAX_KEY, false, (isSmoothed & 1) == 1);
+  characters[64] = new Graphics(loadImage(PATH+"Background/vent-1-1"+EXTEND), MIN_KEY, MAX_KEY, false, (isSmoothed & 1) == 1);
+  characters[65] = new Graphics(loadImage(PATH+"Background/grass"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters[66] = new Graphics(loadImage(PATH+"Background/bark"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
   
   for(int i = 0; i < 3; i++)
-    playerFrames[i] = new Graphics(loadImage(path+"Objects/P"+char(i+49)+"1"+extend), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+    playerFrames[i] = new Graphics(loadImage(PATH+"Objects/P"+char(i+49)+"1"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
   for(int i = 0; i < 3; i++)
-    playerFrames[i+3] = new Graphics(loadImage(path+"Objects/P"+char(i+49)+"-1"+extend), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  playerFrames[6] = new Graphics(loadImage(path+"Objects/PFall1"+extend), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  playerFrames[7] = new Graphics(loadImage(path+"Objects/PFall-1"+extend), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  playerFrames[8] = new Graphics(loadImage(path+"Objects/PJump1"+extend), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  playerFrames[9] = new Graphics(loadImage(path+"Objects/PJump-1"+extend), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  playerFrames[10] = new Graphics(loadImage(path+"Objects/PDeath"+extend), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+    playerFrames[i+3] = new Graphics(loadImage(PATH+"Objects/P"+char(i+49)+"-1"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  playerFrames[6] = new Graphics(loadImage(PATH+"Objects/PFall1"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  playerFrames[7] = new Graphics(loadImage(PATH+"Objects/PFall-1"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  playerFrames[8] = new Graphics(loadImage(PATH+"Objects/PJump1"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  playerFrames[9] = new Graphics(loadImage(PATH+"Objects/PJump-1"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  playerFrames[10] = new Graphics(loadImage(PATH+"Objects/PDeath"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
   
-  rocketFrames[0] = new Graphics(loadImage(path+"Objects/enAir11"+extend), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  rocketFrames[1] = new Graphics(loadImage(path+"Objects/enAir-11"+extend), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  rocketFrames[0] = new Graphics(loadImage(PATH+"Objects/enAir11"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  rocketFrames[1] = new Graphics(loadImage(PATH+"Objects/enAir-11"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
 
   for(int i = 0; i < 16; i++)
      for(int j = 0; j < 12; j++)
@@ -302,46 +345,12 @@ void setup(){
   currPlayer = new Player();
   for(int i = 0; i < 7; i++)
      objects[i] = new NonPlayerEnt();
-  groundRef = 32;
-  pillarRef[0] = 59;
-  pillarRef[1] = 60;
+  groundRef = INSIDE_GROUND;
+  pillarRef[0] = INSIDE_PILLAR_TOP;
+  pillarRef[1] = INSIDE_PILLAR_STEM;
 }
 
 
-
-/*
-00 = background
-01 = ground
-02 = coins
-03 = exit
-04 = pillars
-05 = vents
-06 = "25" text (will rise based on an offset stored in the higher 5 bits)
-07 = invisible teleporter
-*/
-//For player speed, use an int or a byte to store both the whole and fraction part of it and shift the fractional part out every time
-//Set it so that the the whole and fraction parts both have the same amount
-/*
-Player speed in binary: 
-                        0000.0000 = 0
-                        0010.0000 = 2
-                        0010.1000 = 2.5
-                        0000.0100 = 0.25
-                        0001.1000 = 1.5
-*/
-
-/*
-All objects will be in the same array and what their type is will be determined by an ID:
-1 = robot
-2 = rocket
-3 = vertical platform
-4 = horizontal platform
-5 = 1-up
-6 = "+1!" text (will rise up from the centre of the 1-Up's location
--1 = skip
-
-The only time an object with an ID of -1 can be surrounded by objects with IDs >= 0 in the array is when its position is equal to endPoint-2
-*/
 
 //Text drawing will have a function that takes in an array of characters as its input, subtracts 32 from every character's value, and uses that to select a character from the array
 
@@ -394,7 +403,7 @@ void draw(){
 
      if((attractMode & 256) == 256){
        if((arrowPos[0] & 16) == 0){
-         textDraw(gameOver, textLengths[8], GO_MID_X, (short)250, GO_SIZE);
+         textDraw(gameOver, TEXT_LENGTHS[8], GO_MID_X, (short)250, GO_SIZE);
          for(byte i = 5; i < 12; i++)
            score[i] = '0';
          for(byte i = 6; i < 9; i++)
@@ -402,13 +411,13 @@ void draw(){
          for(byte i = 7; i < 12; i++)
            bonus[i] = '0';
          secondScore = 0;
-         attractMode = autoPlayer(attractModeInputs, (byte)30, attractMode);
+         attractMode = autoPlayer(ATTRACT_MODE_INPUTS, (byte)30, attractMode);
        }
        else{
           rect(700, 350, 100, 50);
           rect(650, 400, 150, 50);
           rect(600, 450, 200, 175);
-          attractMode = autoPlayer(introInputs, (byte)5, attractMode, objects, (byte)2, cutIDs, (byte)2);
+          attractMode = autoPlayer(INTRO_INPUTS, (byte)5, attractMode, objects, (byte)2, CUT_IDS, (byte)2);
           if(((attractMode >> 9) & 127) == 1)
              textDraw(questionMark, (byte)1, (short)370, (short)480, (byte)8);
           else if(((attractMode >> 9) & 127) > 3 || (((attractMode >> 9) & 127) > 2) && (attractMode & 255) <= 63)
@@ -432,8 +441,8 @@ void draw(){
        }
        switch(levelCount){
          case MAX_LEVEL:
-           attractMode = autoPlayer(cutsceneInputs, (byte)8, attractMode, objects, (byte)2, cutIDs, (byte)6);
-           textDraw(cutText[0], textLengths[13], (short)272, (short)128, (byte)16);
+           attractMode = autoPlayer(ENDING_INPUTS, (byte)8, attractMode, objects, (byte)2, CUT_IDS, (byte)6);
+           textDraw(cutText[0], TEXT_LENGTHS[13], (short)272, (short)128, (byte)16);
            if(((attractMode >> 9) & 127) >= 1){
              textDraw(cutText[1], (byte)12, (short)304, (short)147, (byte)16);
              if(((attractMode >> 9) & 127) >= 7)
@@ -444,7 +453,7 @@ void draw(){
            rect(700, 350, 100, 50);
            rect(650, 400, 150, 50);
            rect(600, 450, 200, 175);
-           attractMode = autoPlayer(introInputs, (byte)5, attractMode, objects, (byte)2, cutIDs, (byte)2);
+           attractMode = autoPlayer(INTRO_INPUTS, (byte)5, attractMode, objects, (byte)2, CUT_IDS, (byte)2);
            if(((attractMode >> 9) & 127) == 1)
               textDraw(questionMark, (byte)1, (short)370, (short)480, (byte)8);
            else if(((attractMode >> 9) & 127) > 3 || (((attractMode >> 9) & 127) > 2) && (attractMode & 255) <= 63)
@@ -455,10 +464,10 @@ void draw(){
 
      if(((gameOverTime >> 9) & 255) >= 127){
        if((oneUpFlash & 63) <= 30){
-         score[0] = 34;
-         score[1] = 35;
-         score[2] = 36;
-         score[3] = 47;
+         score[0] = RED_ONE;
+         score[1] = RED_U;
+         score[2] = RED_P;
+         score[3] = RED_COLON;
        }
        else
           score[0] = score[1] = score[2] = score[3] = ' ';
@@ -476,12 +485,12 @@ void draw(){
          gameOverTime&=-257;
        }
        if((arrowPos[0] & 16) == 0){
-         textDraw(score, textLengths[1], (short)55, (short)55, (byte)8);
-         textDraw(bonusText, textLengths[0], (short)256, (short)248, (byte)48);
-         textDraw(lives, textLengths[3], (short)55, (short)66, (byte)8);
-         textDraw(highScore, textLengths[2], (short)55, (short)77, (byte)8);
-         textDraw(bonus, textLengths[4], (short)55, (short)88, (byte)8);
-         textDraw(time, textLengths[5], (short)55, (short)99, (byte)8);
+         textDraw(score, TEXT_LENGTHS[1], (short)55, (short)55, (byte)8);
+         textDraw(bonusText, TEXT_LENGTHS[0], (short)256, (short)248, (byte)48);
+         textDraw(lives, TEXT_LENGTHS[3], (short)55, (short)66, (byte)8);
+         textDraw(highScore, TEXT_LENGTHS[2], (short)55, (short)77, (byte)8);
+         textDraw(bonus, TEXT_LENGTHS[4], (short)55, (short)88, (byte)8);
+         textDraw(time, TEXT_LENGTHS[5], (short)55, (short)99, (byte)8);
        }
        if((frameCounter & 64) == 0){
          if(wrapper.digitEqual(time, 6, (byte)0, (byte)3) && (arrowPos[0] & 16) == 0){
@@ -495,22 +504,22 @@ void draw(){
 
         for(int i = endPoint-1; i >= 0; i--){
            switch(objects[i].returnID()){
-             case 1:
+             case OBJ_ROBOT:
                objects[i].robot(currPlayer, characters[28], arrowPos[0]);
                break;
-             case 2:
+             case OBJ_ROCKET:
                objects[i].rocket(currPlayer, rocketFrames, arrowPos[0]);
                break;
-             case 3:
+             case OBJ_PLAT_HORIZ:
                objects[i].horizPlat(currPlayer, characters[29]);
                break;
-             case 4:
+             case OBJ_PLAT_VERT:
                objects[i].vertPlat(currPlayer, characters[29]);
                break;
-             case 5:
+             case OBJ_ONE_UP:
                objects[i].oneUp(wrapper, currPlayer, characters[27], lives, (byte)(7), (2));
                break;
-             case 6:
+             case OBJ_PLUS_ONE:
                endPoint = objects[i].oneUpText(characters[56], endPoint, (byte)i);
                break;
            }
@@ -567,7 +576,7 @@ void draw(){
           zeroLevel(16, 12, levelData, nonRedColours, arrowPos[0]);
           coinCounter[0] = 0;
           if(levelCount != 4)
-            for(byte i = 0; i < textLengths[0]; i++)
+            for(byte i = 0; i < TEXT_LENGTHS[0]; i++)
               bonusText[i] = 0;
           else{
             bonusText[0] = 'B';
@@ -579,28 +588,28 @@ void draw(){
           }
           switch(levelCount){
             case 1:
-               textLengths[6] = 8;
+               TEXT_LENGTHS[6] = 8;
                stageStart[7] = '1';
                for(byte i = 8; i < stageStart.length; i++)
                  stageStart[i] = 0;
               loadLevel1(enSpeed);
               break;
             case 2:
-              textLengths[6] = 8;
+              TEXT_LENGTHS[6] = 8;
                stageStart[7] = '2';
                for(byte i = 8; i < stageStart.length; i++)
                  stageStart[i] = 0;
                  loadLevel2(enSpeed);
               break;
             case 3:
-               textLengths[6] = 8;
+               TEXT_LENGTHS[6] = 8;
                stageStart[7] = '3';
                for(byte i = 8; i < stageStart.length; i++)
                  stageStart[i] = 0;
               loadLevel3(enSpeed);
               break;
             case 4:
-              textLengths[6] = 12;
+              TEXT_LENGTHS[6] = 12;
               stageStart[7] = 'B';
               stageStart[8] = 'O';
               stageStart[9] = 'N';
@@ -609,14 +618,14 @@ void draw(){
               loadLevel4();
               break;
             case 5:
-               textLengths[6] = 8;
+               TEXT_LENGTHS[6] = 8;
                stageStart[7] = '4';
                for(byte i = 8; i < stageStart.length; i++)
                  stageStart[i] = 0;
               loadLevel5(enSpeed);
               break;
             case 6:
-              textLengths[6] = 8;
+              TEXT_LENGTHS[6] = 8;
               stageStart[7] = '5';
               for(byte i = 8; i < stageStart.length; i++)
                 stageStart[i] = 0;
@@ -624,7 +633,7 @@ void draw(){
               break;
             case MAX_LEVEL:
               gameOverTime|=65024;
-              textLengths[6] = 12;
+              TEXT_LENGTHS[6] = 12;
               stageStart[7] = 'B';
               stageStart[8] = 'R';
               stageStart[9] = 'E';
@@ -635,7 +644,7 @@ void draw(){
             default:
               levelCount = 1;
               loadLevel1(enSpeed);
-              textLengths[6] = 8;
+              TEXT_LENGTHS[6] = 8;
               stageStart[7] = '1';
               for(byte i = 8; i < stageStart.length; i++)
                 stageStart[i] = 0;
@@ -657,7 +666,7 @@ void draw(){
          saw.stop();
           drawBack((byte)(frameCounter & 63), currPlayer, wrapper, levelData, 16, 12, coinCounter, goalCount, score, arrowPos, sqr, soundDurations, frequencies, soundPointers, soundTimers);
           if((frameCounter & 63) >= 0 && (frameCounter & 63) <= 30)
-            textDraw(pauseText, textLengths[13], (short)340, (short)(250), (byte)24);
+            textDraw(pauseText, TEXT_LENGTHS[13], (short)340, (short)(250), (byte)24);
        }
        drawGround(levelData, 16, 12);
        if((attractMode & 256) == 0){
@@ -684,8 +693,8 @@ void draw(){
        }
        gameOverTime+=512;
        titleTime = 0;
-       textDraw(stageStart, textLengths[6], (short)((800 - (textLengths[6]*32)) >> 1), (short)252, (byte)32);
-       textDraw(readyText, textLengths[7], (short)(304), (short)(300), (byte)32);
+       textDraw(stageStart, TEXT_LENGTHS[6], (short)((800 - (TEXT_LENGTHS[6]*32)) >> 1), (short)252, (byte)32);
+       textDraw(readyText, TEXT_LENGTHS[7], (short)(304), (short)(300), (byte)32);
        if((keyInputs & 32) == 32 && (gameOverTime & 256) == 0){
          gameOverTime = -256;
        }
@@ -699,7 +708,7 @@ void draw(){
          bonus[7] = '0';
          bonus[8] = '5';
        }
-       for(byte i = 9; i < textLengths[4]; i++)
+       for(byte i = 9; i < TEXT_LENGTHS[4]; i++)
          bonus[i] = '0';
        time[6] = max[0];
        time[7] = max[1];
@@ -743,7 +752,7 @@ void draw(){
        }
        titleLogoY = 1080;
        titleLogoX = 0;
-       textDraw(gameOver, textLengths[8], GO_MID_X, GO_MID_Y, GO_SIZE);
+       textDraw(gameOver, TEXT_LENGTHS[8], GO_MID_X, GO_MID_Y, GO_SIZE);
        gameOverTime++;
        if((keyInputs & 32) == 32){
          gameOverTime = 457;
@@ -796,19 +805,19 @@ void draw(){
            currPlayer.setXSpeed((byte)(0));
            if((isSmoothed & 24) == 8 || (isSmoothed & 4) == 4){
              currPlayer.setX((short)(100));
-             attractMode = (short)(256 | (attractModeInputs[0] & 255));
+             attractMode = (short)(256 | (ATTRACT_MODE_INPUTS[0] & 255));
              loadLevel1((byte)14);
            }
            else{
              currPlayer.setX(-150);
-             attractMode = (short)(256 | (introInputs[0] & 255));
+             attractMode = (short)(256 | (INTRO_INPUTS[0] & 255));
              arrowPos[0]&=-128;
              loadLevel0(); 
            }
            currPlayer.setY((short)(500));
            currPlayer.setYSpeed((byte)(0));
            currPlayer.setState((byte)(0));
-           for(byte i = 0; i < textLengths[0]; i++)
+           for(byte i = 0; i < TEXT_LENGTHS[0]; i++)
              bonusText[i] = 0;
            
            
@@ -817,10 +826,10 @@ void draw(){
          }
          for(byte i = 0; i < 4; i++){
            gameText[i][0] = (i == ((titleTime >> 9) & 3)) ? '>' : ' ';
-           textDraw(gameText[i], textLengths[9+i], (short)256, (short)(375+25*i), (byte)24);
+           textDraw(gameText[i], TEXT_LENGTHS[9+i], (short)256, (short)(375+25*i), (byte)24);
          }
          if(frameCounter >= 0 && frameCounter <= 30)
-           textDraw(enterText, textLengths[12], (short)268, (short)500, (byte)24);
+           textDraw(enterText, TEXT_LENGTHS[12], (short)268, (short)500, (byte)24);
          if((keyInputs & 3) != 0){
            if((titleTime & 2048) == 0){
              if((keyInputs & 3) == 1)
@@ -855,7 +864,7 @@ void draw(){
                oneUpFlash&=-64;
                for(byte i = 5; i < 12; i++)
                  score[i] = '0';
-               textLengths[6] = 8;
+               TEXT_LENGTHS[6] = 8;
                stageStart[7] = '1';
                soundSize&=63;
                for(byte i = 8; i < stageStart.length; i++)
@@ -866,7 +875,7 @@ void draw(){
                attractMode = 0;
                secondScore = 0;
                arrowPos[0]&=-128;
-               for(byte i = 0; i < textLengths[0]; i++)
+               for(byte i = 0; i < TEXT_LENGTHS[0]; i++)
                  bonusText[i] = 0;
                currPlayer.setXSpeed((byte)(0));
                currPlayer.setYSpeed((byte)(0));
@@ -904,7 +913,7 @@ void draw(){
                    }
                    highScore[4] = highScore[5] = highComp[0] = highComp[1] =  '0';
                    highScore[6] = highComp[3] = '2';
-                   for(byte i = 7; i < textLengths[2]; i++)
+                   for(byte i = 7; i < TEXT_LENGTHS[2]; i++)
                      highScore[i] = highComp[i-4] = '0';
                    break;
                  case 3:
@@ -992,28 +1001,28 @@ void loadLevel0(){
 
   keyInputs = 0;
   arrowPos[0]|=16;
-  groundRef = 65;
-  pillarRef[0] = 65;
-  pillarRef[1] = 66;
+  groundRef = OUTSIDE_GROUND;
+  pillarRef[0] = OUTSIDE_GROUND;
+  pillarRef[1] = OUTSIDE_PILLAR_STEM;
   zeroLevel(16, 12, levelData, nonRedColours, arrowPos[0]);
   if((attractMode & 256) == 0)
-    attractMode = (short)(introInputs[0] & 255);
+    attractMode = (short)(INTRO_INPUTS[0] & 255);
   bonus[7] = '0';
   bonus[8] = '0';
   time[6] = time[7] = time[8] = '9';
-  placeTile(12, 8, 1, 16, 12, levelData);
-  placeRect(13, 7, 3, 4, 1, 16, 12, levelData);
-  placeHoriz(14, 6, 2, 1, 16, 12, levelData);
-  placeHoriz(5, 8, 3, 1, 16, 12, levelData);
-  placeTile(6, 7, 1, 16, 12, levelData);
-  placeTile(6, 8, 4, 16, 12, levelData);
-  placeHoriz(9, 3, 3, 1, 16, 12, levelData);
-  placeTile(10, 2, 1, 16, 12, levelData);
-  placeTile(10, 3, 4, 16, 12, levelData);
-  placeHoriz(2, 5, 3, 1, 16, 12, levelData);
-  placeTile(3, 4, 1, 16, 12, levelData);
-  placeTile(3, 5, 4, 16, 12, levelData);
-  placeTile(12, 10, 7, 16, 12, levelData);
+  placeTile(12, 8, BG_GROUND, 16, 12, levelData);
+  placeRect(13, 7, 3, 4, BG_GROUND, 16, 12, levelData);
+  placeHoriz(14, 6, 2, BG_GROUND, 16, 12, levelData);
+  placeHoriz(5, 8, 3, BG_GROUND, 16, 12, levelData);
+  placeTile(6, 7, BG_GROUND, 16, 12, levelData);
+  placeTile(6, 8, BG_PILLAR, 16, 12, levelData);
+  placeHoriz(9, 3, 3, BG_GROUND, 16, 12, levelData);
+  placeTile(10, 2, BG_GROUND, 16, 12, levelData);
+  placeTile(10, 3, BG_PILLAR, 16, 12, levelData);
+  placeHoriz(2, 5, 3, BG_GROUND, 16, 12, levelData);
+  placeTile(3, 4, BG_GROUND, 16, 12, levelData);
+  placeTile(3, 5, BG_PILLAR, 16, 12, levelData);
+  placeTile(12, 10, BG_TELE, 16, 12, levelData);
   objects[0].setProperties((byte)-1, (short)-150, (short)525, (byte)2, (short)-150, (short)(800));
   objects[1].setProperties((byte)-1, (short)-150, (short)500, (byte)2, (short)-150, (short)(800));
   for(byte i = 2; i < 7; i++)
@@ -1022,174 +1031,174 @@ void loadLevel0(){
 
 void loadLevel1(byte enemySpeed){
   arrowPos[0] = (byte)((arrowPos[0] & -22) | 5);
-  groundRef = 32;
-  pillarRef[0] = 59;
-  pillarRef[1] = 60;
+  groundRef = INSIDE_GROUND;
+  pillarRef[0] = INSIDE_PILLAR_TOP;
+  pillarRef[1] = INSIDE_PILLAR_STEM;
   zeroLevel(16, 12, levelData, nonRedColours, arrowPos[0]);
   goalCount = 5;
   endPoint = 3;
-  placeTile(8, 10, 1, 16, 12, levelData); 
-  placeHoriz(9, 10, 3, 2, 16, 12, levelData);
-  placeTile(9, 9, 1, 16, 12, levelData); 
-  placeHoriz(10, 8, 2, 1, 16, 12, levelData);
-  placeHoriz(6, 6, 6, 1, 16, 12, levelData);
+  placeTile(8, 10, BG_GROUND, 16, 12, levelData); 
+  placeHoriz(9, 10, 3, BG_COIN, 16, 12, levelData);
+  placeTile(9, 9, BG_GROUND, 16, 12, levelData); 
+  placeHoriz(10, 8, 2, BG_GROUND, 16, 12, levelData);
+  placeHoriz(6, 6, 6, BG_GROUND, 16, 12, levelData);
   placeHoriz(9, 6, 2, 0, 16, 12, levelData);
-  placeTile(5, 7, 1, 16, 12, levelData); 
-  placeTile(5, 6, 2, 16, 12, levelData);
-  placeTile(3, 7, 1, 16, 12, levelData); 
-  placeTile(3, 6, 2, 16, 12, levelData);
-  placeHoriz(1, 6, 2, 1, 16, 12, levelData);
-  placeTile(11, 7, 4, 16, 12, levelData); 
-  placeTile(11, 9, 4, 16, 12, levelData); 
-  placeTile(7, 7, 4, 16, 12, levelData); 
-  placeTile(5, 8, 4, 16, 12, levelData); 
-  placeTile(3, 8, 4, 16, 12, levelData); 
-  placeTile(11, 4, 5, 16, 12, levelData); 
-  placeTile(1, 5, 3, 16, 12, levelData); 
-  objects[0].setProperties((byte)1, (short)300, (short)525, (byte)(enemySpeed & 3), (short)150, (short)400);
-  objects[1].setProperties((byte)2, (short)200,(short)225, (byte)((enemySpeed >> 2) & 7), (short)175,(short)300);
-  objects[2].setProperties((byte)4, (short)700, (short)400, (byte)2, (short)300, (short)575);
+  placeTile(5, 7, BG_GROUND, 16, 12, levelData); 
+  placeTile(5, 6, BG_COIN, 16, 12, levelData);
+  placeTile(3, 7, BG_GROUND, 16, 12, levelData); 
+  placeTile(3, 6, BG_COIN, 16, 12, levelData);
+  placeHoriz(1, 6, 2, BG_GROUND, 16, 12, levelData);
+  placeTile(11, 7, BG_PILLAR, 16, 12, levelData); 
+  placeTile(11, 9, BG_PILLAR, 16, 12, levelData); 
+  placeTile(7, 7, BG_PILLAR, 16, 12, levelData); 
+  placeTile(5, 8, BG_PILLAR, 16, 12, levelData); 
+  placeTile(3, 8, BG_PILLAR, 16, 12, levelData); 
+  placeTile(11, 4, BG_VENT, 16, 12, levelData); 
+  placeTile(1, 5, BG_EXIT, 16, 12, levelData); 
+  objects[0].setProperties(OBJ_ROBOT, (short)300, (short)525, (byte)(enemySpeed & 3), (short)150, (short)400);
+  objects[1].setProperties(OBJ_ROCKET, (short)200,(short)225, (byte)((enemySpeed >> 2) & 7), (short)175,(short)300);
+  objects[2].setProperties(OBJ_PLAT_VERT, (short)700, (short)400, (byte)2, (short)300, (short)575);
   for(byte i = 3; i < 7; i++)
     objects[i].setProperties();
 }
 void loadLevel2(byte enemySpeed){
     arrowPos[0] = (byte)((arrowPos[0] & -22) | 5);
-    groundRef = 32;
-    pillarRef[0] = 59;
-    pillarRef[1] = 60;
+    groundRef = INSIDE_GROUND;
+    pillarRef[0] = INSIDE_PILLAR_TOP;
+    pillarRef[1] = INSIDE_PILLAR_STEM;
     zeroLevel(16, 12, levelData, nonRedColours, arrowPos[0]);
     goalCount = 7;
     endPoint = 4;
     if(randomNum > 0 && (oneUpFlash & 64) == 64)
       endPoint++;
-    placeTile(1, 10, 3, 16, 12, levelData);
-    placeHoriz(4, 10, 9, 1, 16, 12, levelData);
-    placeHoriz(9, 9, 4, 1, 16, 12, levelData);
-    placeHoriz(10, 8, 3, 1, 16, 12, levelData);
-    placeHoriz(1, 6, 3, 1, 16, 12, levelData);
-    placeHoriz(1, 5, 3, 2, 16, 12, levelData);
-    placeHoriz(11, 7, 2, 2, 16, 12, levelData);
-    placeHoriz(11, 7, 2, 2, 16, 12, levelData);
-    placeHoriz(13, 10, 2, 2, 16, 12, levelData);
-    placeTile(3, 7, 4, 16, 12, levelData);
-    placeTile(4, 4, 5, 16, 12, levelData);
-    placeTile(10, 4, 5, 16, 12, levelData);
-    objects[0].setProperties((byte)1, (short)50, (short)275, (byte)(enemySpeed & 3), (short)50, (short)150);
-    objects[1].setProperties((byte)1, (short)250, (short)475, (byte)(enemySpeed & 3), (short)200, (short)400);
-    objects[2].setProperties((byte)4, (short)700,(short)450, (byte)2, (short)400, (short)575);
-    objects[3].setProperties((byte)3, (short)300,(short)325,(byte)2, (short)250, (short)450);
-    objects[4].setProperties((byte)5, (short)465, (short)200, (byte)1, (short)190, (short)235);
+    placeTile(1, 10, BG_EXIT, 16, 12, levelData);
+    placeHoriz(4, 10, 9, BG_GROUND, 16, 12, levelData);
+    placeHoriz(9, 9, 4, BG_GROUND, 16, 12, levelData);
+    placeHoriz(10, 8, 3, BG_GROUND, 16, 12, levelData);
+    placeHoriz(1, 6, 3, BG_GROUND, 16, 12, levelData);
+    placeHoriz(1, 5, 3, BG_COIN, 16, 12, levelData);
+    placeHoriz(11, 7, 2, BG_COIN, 16, 12, levelData);
+    placeHoriz(11, 7, 2, BG_COIN, 16, 12, levelData);
+    placeHoriz(13, 10, 2, BG_COIN, 16, 12, levelData);
+    placeTile(3, 7, BG_PILLAR, 16, 12, levelData);
+    placeTile(4, 4, BG_VENT, 16, 12, levelData);
+    placeTile(10, 4, BG_VENT, 16, 12, levelData);
+    objects[0].setProperties(OBJ_ROBOT, (short)50, (short)275, (byte)(enemySpeed & 3), (short)50, (short)150);
+    objects[1].setProperties(OBJ_ROBOT, (short)250, (short)475, (byte)(enemySpeed & 3), (short)200, (short)400);
+    objects[2].setProperties(OBJ_PLAT_VERT, (short)700,(short)450, (byte)2, (short)400, (short)575);
+    objects[3].setProperties(OBJ_PLAT_HORIZ, (short)300,(short)325,(byte)2, (short)250, (short)450);
+    objects[4].setProperties(OBJ_ONE_UP, (short)465, (short)200, (byte)1, (short)190, (short)235);
     for(int i = endPoint; i < 7; i++)
       objects[i].setProperties();
 }
 void loadLevel3(byte enemySpeed){
     endPoint = 6;
     arrowPos[0] = (byte)((arrowPos[0] & -22) | 4);
-    groundRef = 32;
-    pillarRef[0] = 59;
-    pillarRef[1] = 60;
+    groundRef = INSIDE_GROUND;
+    pillarRef[0] = INSIDE_PILLAR_TOP;
+    pillarRef[1] = INSIDE_PILLAR_STEM;
     zeroLevel(16, 12, levelData, nonRedColours, arrowPos[0]);
     goalCount = 12;
     if(randomNum > 0 && (oneUpFlash & 64) == 64)
       endPoint++;
-    placeRect(9, 7, 6, 4, 1, 16, 12, levelData);
-    placeHoriz(9, 6, 6, 2, 16, 12, levelData);
-    placeHoriz(1, 7, 6, 1, 16, 12, levelData);
-    placeHoriz(1, 6, 6, 2, 16, 12, levelData);
-    placeHoriz(9, 3, 6, 1, 16, 12, levelData);
-    placeTile(14, 2, 3, 16, 12, levelData);
-    placeTile(2, 8, 4, 16, 12, levelData);
-    placeTile(4, 8, 4, 16, 12, levelData);
-    placeTile(6, 8, 4, 16, 12, levelData);
-    placeTile(9, 4, 4, 16, 12, levelData);
-    placeTile(11, 4, 4, 16, 12, levelData);
-    placeTile(13, 4, 4, 16, 12, levelData);
-    placeTile(6, 3, 5, 16, 12, levelData);
-    objects[0].setProperties((byte)1, (short)600, (short)125, (byte)(enemySpeed & 3), (short)475, (short)725);
-    objects[1].setProperties((byte)1, (short)250, (short)325, (byte)(enemySpeed & 3), (short)50, (short)300);
-    objects[2].setProperties((byte)2, (short)60, (short)250, (byte)((enemySpeed >> 2) & 7), (short)50, (short)725);
-    objects[3].setProperties((byte)2, (short)715, (short)225, (byte)(-((enemySpeed >> 2) & 7)), (short)50, (short)725);
-    objects[4].setProperties((byte)4, (short)350, (short)200, (byte)2, (short)150, (short)575);
-    objects[5].setProperties((byte)4, (short)400, (short)500, (byte)-2, (short)150, (short)575);
+    placeRect(9, 7, 6, 4, BG_GROUND, 16, 12, levelData);
+    placeHoriz(9, 6, 6, BG_COIN, 16, 12, levelData);
+    placeHoriz(1, 7, 6, BG_GROUND, 16, 12, levelData);
+    placeHoriz(1, 6, 6, BG_COIN, 16, 12, levelData);
+    placeHoriz(9, 3, 6, BG_GROUND, 16, 12, levelData);
+    placeTile(14, 2, BG_EXIT, 16, 12, levelData);
+    placeTile(2, 8, BG_PILLAR, 16, 12, levelData);
+    placeTile(4, 8, BG_PILLAR, 16, 12, levelData);
+    placeTile(6, 8, BG_PILLAR, 16, 12, levelData);
+    placeTile(9, 4, BG_PILLAR, 16, 12, levelData);
+    placeTile(11, 4, BG_PILLAR, 16, 12, levelData);
+    placeTile(13, 4, BG_PILLAR, 16, 12, levelData);
+    placeTile(6, 3, BG_VENT, 16, 12, levelData);
+    objects[0].setProperties(OBJ_ROBOT, (short)600, (short)125, (byte)(enemySpeed & 3), (short)475, (short)725);
+    objects[1].setProperties(OBJ_ROBOT, (short)250, (short)325, (byte)(enemySpeed & 3), (short)50, (short)300);
+    objects[2].setProperties(OBJ_ROCKET, (short)60, (short)250, (byte)((enemySpeed >> 2) & 7), (short)50, (short)725);
+    objects[3].setProperties(OBJ_ROCKET, (short)715, (short)225, (byte)(-((enemySpeed >> 2) & 7)), (short)50, (short)725);
+    objects[4].setProperties(OBJ_PLAT_VERT, (short)350, (short)200, (byte)2, (short)150, (short)575);
+    objects[5].setProperties(OBJ_PLAT_VERT, (short)400, (short)500, (byte)-2, (short)150, (short)575);
     if(endPoint == 7)
-      objects[6].setProperties((byte)5, (short)265, (short)150, (byte)1, (short)140, (short)185);
+      objects[6].setProperties(OBJ_ONE_UP, (short)265, (short)150, (byte)1, (short)140, (short)185);
     else
       objects[6].setProperties();
 }
 void loadLevel4(){
   arrowPos[0] = (byte)(arrowPos[0] & -22);
-  groundRef = 32;
-  pillarRef[0] = 59;
-  pillarRef[1] = 60;
+  groundRef = INSIDE_GROUND;
+  pillarRef[0] = INSIDE_PILLAR_TOP;
+  pillarRef[1] = INSIDE_PILLAR_STEM;
   zeroLevel(16, 12, levelData, nonRedColours, arrowPos[0]);
   goalCount = 28;
   endPoint = 2;
-  placeHoriz(1, 6, 6, 1, 16, 12, levelData);
-  placeHoriz(9, 6, 6, 1, 16, 12, levelData);
-  placeRect(1, 4, 14, 2, 2, 16, 12, levelData);
-  placeTile(2, 7, 4, 16, 12, levelData);
-  placeTile(4, 7, 4, 16, 12, levelData);
-  placeTile(6, 7, 4, 16, 12, levelData);
-  placeTile(9, 7, 4, 16, 12, levelData);
-  placeTile(11, 7, 4, 16, 12, levelData);
-  placeTile(13, 7, 4, 16, 12, levelData);
-  placeTile(4, 3, 5, 16, 12, levelData);
-  placeTile(10, 3, 5, 16, 12, levelData);
-  objects[0].setProperties((byte)4, (short)350, (short)400, (byte)-2, (short)300, (short)575);
-  objects[1].setProperties((byte)4, (short)400, (short)400, (byte)-2, (short)300, (short)575);
+  placeHoriz(1, 6, 6, BG_GROUND, 16, 12, levelData);
+  placeHoriz(9, 6, 6, BG_GROUND, 16, 12, levelData);
+  placeRect(1, 4, 14, 2, BG_COIN, 16, 12, levelData);
+  placeTile(2, 7, BG_PILLAR, 16, 12, levelData);
+  placeTile(4, 7, BG_PILLAR, 16, 12, levelData);
+  placeTile(6, 7, BG_PILLAR, 16, 12, levelData);
+  placeTile(9, 7, BG_PILLAR, 16, 12, levelData);
+  placeTile(11, 7, BG_PILLAR, 16, 12, levelData);
+  placeTile(13, 7, BG_PILLAR, 16, 12, levelData);
+  placeTile(4, 3, BG_VENT, 16, 12, levelData);
+  placeTile(10, 3, BG_VENT, 16, 12, levelData);
+  objects[0].setProperties(OBJ_PLAT_VERT, (short)350, (short)400, (byte)-2, (short)300, (short)575);
+  objects[1].setProperties(OBJ_PLAT_VERT, (short)400, (short)400, (byte)-2, (short)300, (short)575);
   for(byte i = 2; i < 7; i++)
     objects[i].setProperties();
 }
 void loadLevel5(byte enemySpeed){
   arrowPos[0] = (byte)((arrowPos[0] & -22) | 5);
-  groundRef = 32;
-  pillarRef[0] = 59;
-  pillarRef[1] = 60;
+  groundRef = INSIDE_GROUND;
+  pillarRef[0] = INSIDE_PILLAR_TOP;
+  pillarRef[1] = INSIDE_PILLAR_STEM;
   zeroLevel(16, 12, levelData, nonRedColours, arrowPos[0]);
   goalCount = 9;
   endPoint = 4;
-  placeTile(1, 10, 1, 16, 12, levelData);
-  placeTile(12, 4, 1, 16, 12, levelData);
-  placeHoriz(12, 10, 3, 1, 16, 12, levelData);
-  placeHoriz(13, 9, 2, 1, 16, 12, levelData);
-  placeHoriz(7, 6, 3, 1, 16, 12, levelData);
-  placeTile(8, 5, 3, 16, 12, levelData);
-  placeTile(7, 7, 4, 16, 12, levelData);
-  placeTile(9, 7, 4, 16, 12, levelData);
-  placeTile(12, 5, 4, 16, 12, levelData);
-  placeTile(4, 2, 5, 16, 12, levelData);
-  placeTile(8, 2, 5, 16, 12, levelData);
-  placeTile(12, 2, 5, 16, 12, levelData);
-  placeHoriz(1, 5, 6, 2, 16, 12, levelData);
-  placeVert(1, 7, 3, 2, 16, 12, levelData);
-  objects[0].setProperties((byte)2, (short)150,(short)450, (byte)((enemySpeed >> 2) & 7), (short)50, (short)275);
-  objects[1].setProperties((byte)2, (short)550,(short)200, (byte)(-(((enemySpeed) >> 2) & 7)), (short)350, (short)575);
-  objects[2].setProperties((byte)3, (short)200, (short)300, (byte)2, (short)50, (short)350);
-  objects[3].setProperties((byte)4, (short)700, (short)300, (byte)2, (short)200, (short)450);
+  placeTile(1, 10, BG_GROUND, 16, 12, levelData);
+  placeTile(12, 4, BG_GROUND, 16, 12, levelData);
+  placeHoriz(12, 10, 3, BG_GROUND, 16, 12, levelData);
+  placeHoriz(13, 9, 2, BG_GROUND, 16, 12, levelData);
+  placeHoriz(7, 6, 3, BG_GROUND, 16, 12, levelData);
+  placeTile(8, 5, BG_EXIT, 16, 12, levelData);
+  placeTile(7, 7, BG_PILLAR, 16, 12, levelData);
+  placeTile(9, 7, BG_PILLAR, 16, 12, levelData);
+  placeTile(12, 5, BG_PILLAR, 16, 12, levelData);
+  placeTile(4, 2, BG_VENT, 16, 12, levelData);
+  placeTile(8, 2, BG_VENT, 16, 12, levelData);
+  placeTile(12, 2, BG_VENT, 16, 12, levelData);
+  placeHoriz(1, 5, 6, BG_COIN, 16, 12, levelData);
+  placeVert(1, 7, 3, BG_COIN, 16, 12, levelData);
+  objects[0].setProperties(OBJ_ROCKET, (short)150,(short)450, (byte)((enemySpeed >> 2) & 7), (short)50, (short)275);
+  objects[1].setProperties(OBJ_ROCKET, (short)550,(short)200, (byte)(-(((enemySpeed) >> 2) & 7)), (short)350, (short)575);
+  objects[2].setProperties(OBJ_PLAT_HORIZ, (short)200, (short)300, (byte)2, (short)50, (short)350);
+  objects[3].setProperties(OBJ_PLAT_VERT, (short)700, (short)300, (byte)2, (short)200, (short)450);
   for(int i = 4; i < 7; i++)
     objects[i].setProperties();
 }
 void loadLevel6(){
   keyInputs = 0;
   arrowPos[0]|=16;
-  groundRef = 65;
-  pillarRef[0] = 65;
-  pillarRef[1] = 66;
+  groundRef = OUTSIDE_GROUND;
+  pillarRef[0] = OUTSIDE_GROUND;
+  pillarRef[1] = OUTSIDE_PILLAR_STEM;
   zeroLevel(16, 12, levelData, nonRedColours, arrowPos[0]);
-  attractMode = (short)(cutsceneInputs[0] & 255);
+  attractMode = (short)(ENDING_INPUTS[0] & 255);
   bonus[7] = '0';
   bonus[8] = '0';
   time[6] = time[7] = time[8] = '9';
-  placeHoriz(1, 5, 4, 1, 16, 12, levelData);
-  placeHoriz(2, 5, 2, 4, 16, 12, levelData);
-  placeVert(0, 5, 2, 1, 16, 12, levelData);
-  placeVert(5, 5, 2, 1, 16, 12, levelData);
-  placeHoriz(1, 4, 4, 1, 16, 12, levelData);
-  placeHoriz(2, 3, 2, 1, 16, 12, levelData);
-  placeVert(6, 6, 2, 1, 16, 12, levelData);
-  placeHoriz(10, 8, 3, 1, 16, 12, levelData);
-  placeTile(11, 8, 4, 16, 12, levelData);
-  placeTile(11, 7, 1, 16, 12, levelData);
+  placeHoriz(1, 5, 4, BG_GROUND, 16, 12, levelData);
+  placeHoriz(2, 5, 2, BG_PILLAR, 16, 12, levelData);
+  placeVert(0, 5, 2, BG_GROUND, 16, 12, levelData);
+  placeVert(5, 5, 2, BG_GROUND, 16, 12, levelData);
+  placeHoriz(1, 4, 4, BG_GROUND, 16, 12, levelData);
+  placeHoriz(2, 3, 2, BG_GROUND, 16, 12, levelData);
+  placeVert(6, 6, 2, BG_GROUND, 16, 12, levelData);
+  placeHoriz(10, 8, 3, BG_GROUND, 16, 12, levelData);
+  placeTile(11, 8, BG_PILLAR, 16, 12, levelData);
+  placeTile(11, 7, BG_GROUND, 16, 12, levelData);
   objects[0].setProperties((byte)-1, (short)800, (short)525, (byte)-2, (short)-150, (short)825);
   objects[1].setProperties((byte)-1, (short)800, (short)500, (byte)-2, (short)-150, (short)825);
   for(byte i = 2; i < 7; i++)
@@ -1197,60 +1206,60 @@ void loadLevel6(){
 }
 void loadLevel7(byte speed){
   arrowPos[0] = (byte)((arrowPos[0] & -22) | 4);
-  groundRef = 32;
-  pillarRef[0] = 59;
-  pillarRef[1] = 60;
+  groundRef = INSIDE_GROUND;
+  pillarRef[0] = INSIDE_PILLAR_TOP;
+  pillarRef[1] = INSIDE_PILLAR_STEM;
   zeroLevel(16, 12, levelData, nonRedColours, arrowPos[0]);
   goalCount = 12;
   endPoint = 5;
-  placeTile(7, 10, 1, 16, 12, levelData);
-  placeTile(8, 10, 1, 16, 12, levelData);
-  placeTile(8, 9, 1, 16, 12, levelData);
-  placeTile(9, 9, 2, 16, 12, levelData);
-  placeTile(9, 10, 2, 16, 12, levelData);
-  placeTile(10, 10, 1, 16, 12, levelData);
-  placeTile(11, 10, 1, 16, 12, levelData);
-  placeTile(11, 9, 1, 16, 12, levelData);
-  placeTile(11, 8, 2, 16, 12, levelData);
-  placeTile(12, 8, 2, 16, 12, levelData);
-  placeTile(12, 9, 1, 16, 12, levelData);
-  placeTile(13, 9, 1, 16, 12, levelData);
-  placeTile(12, 10, 2, 16, 12, levelData);
-  placeTile(13, 10, 2, 16, 12, levelData);
-  placeTile(11, 6, 1, 16, 12, levelData);
-  placeTile(12, 6, 1, 16, 12, levelData);
-  placeTile(11, 7, 4, 16, 12, levelData);
-  placeTile(12, 7, 4, 16, 12, levelData);
-  placeTile(8, 6, 1, 16, 12, levelData);
-  placeTile(9, 6, 1, 16, 12, levelData);
-  placeTile(8, 7, 4, 16, 12, levelData);
-  placeTile(9, 7, 4, 16, 12, levelData);
-  placeTile(8, 5, 2, 16, 12, levelData);
-  placeTile(9, 5, 2, 16, 12, levelData);
-  placeTile(4, 8, 4, 16, 12, levelData);
-  placeTile(5, 8, 4, 16, 12, levelData);
-  placeTile(6, 6, 2, 16, 12, levelData);
-  placeTile(4, 7, 1, 16, 12, levelData);
-  placeTile(5, 7, 1, 16, 12, levelData);
-  placeTile(1, 4, 1, 16, 12, levelData);
-  placeTile(1, 5, 4, 16, 12, levelData);
-  placeTile(1, 3, 2, 16, 12, levelData);
-  placeHoriz(6, 3, 4, 1, 16, 12, levelData);
-  placeTile(6, 4, 4, 16, 12, levelData);
-  placeTile(9, 4, 4, 16, 12, levelData);
-  placeTile(8, 2, 2, 16, 12, levelData);
-  placeTile(9, 2, 2, 16, 12, levelData);
-  placeHoriz(11, 3, 4, 1, 16, 12, levelData);
-  placeTile(14, 2, 3, 16, 12, levelData);
-  placeTile(11, 4, 4, 16, 12, levelData);
-  placeTile(13, 4, 4, 16, 12, levelData);
-  placeTile(3, 2, 5, 16, 12, levelData);
-  placeTile(12, 1, 5, 16, 12, levelData);
-  objects[0].setProperties((byte)1, (short)650, (short)425, (byte)((~(speed & 3))+1), (short)550, (short)700);
-  objects[1].setProperties((byte)1, (short)350, (short)125, (byte)(speed & 3), (short)300, (short)500);
-  objects[2].setProperties((byte)2, (short)300, (short)250, (byte)((speed >> 2) & 7), (short)100, (short)525);
-  objects[3].setProperties((byte)4, (short)700, (short)300, (byte)2, (short)(300), (short)(600));
-  objects[4].setProperties((byte)4, (short)150, (short)375, (byte)-2, (short)(200), (short)(375));
+  placeTile(7, 10, BG_GROUND, 16, 12, levelData);
+  placeTile(8, 10, BG_GROUND, 16, 12, levelData);
+  placeTile(8, 9, BG_GROUND, 16, 12, levelData);
+  placeTile(9, 9, BG_COIN, 16, 12, levelData);
+  placeTile(9, 10, BG_COIN, 16, 12, levelData);
+  placeTile(10, 10, BG_GROUND, 16, 12, levelData);
+  placeTile(11, 10, BG_GROUND, 16, 12, levelData);
+  placeTile(11, 9, BG_GROUND, 16, 12, levelData);
+  placeTile(11, 8, BG_COIN, 16, 12, levelData);
+  placeTile(12, 8, BG_COIN, 16, 12, levelData);
+  placeTile(12, 9, BG_GROUND, 16, 12, levelData);
+  placeTile(13, 9, BG_GROUND, 16, 12, levelData);
+  placeTile(12, 10, BG_COIN, 16, 12, levelData);
+  placeTile(13, 10, BG_COIN, 16, 12, levelData);
+  placeTile(11, 6, BG_GROUND, 16, 12, levelData);
+  placeTile(12, 6, BG_GROUND, 16, 12, levelData);
+  placeTile(11, 7, BG_PILLAR, 16, 12, levelData);
+  placeTile(12, 7, BG_PILLAR, 16, 12, levelData);
+  placeTile(8, 6, BG_GROUND, 16, 12, levelData);
+  placeTile(9, 6, BG_GROUND, 16, 12, levelData);
+  placeTile(8, 7, BG_PILLAR, 16, 12, levelData);
+  placeTile(9, 7, BG_PILLAR, 16, 12, levelData);
+  placeTile(8, 5, BG_COIN, 16, 12, levelData);
+  placeTile(9, 5, BG_COIN, 16, 12, levelData);
+  placeTile(4, 8, BG_PILLAR, 16, 12, levelData);
+  placeTile(5, 8, BG_PILLAR, 16, 12, levelData);
+  placeTile(6, 6, BG_COIN, 16, 12, levelData);
+  placeTile(4, 7, BG_GROUND, 16, 12, levelData);
+  placeTile(5, 7, BG_GROUND, 16, 12, levelData);
+  placeTile(1, 4, BG_GROUND, 16, 12, levelData);
+  placeTile(1, 5, BG_PILLAR, 16, 12, levelData);
+  placeTile(1, 3, BG_COIN, 16, 12, levelData);
+  placeHoriz(6, 3, 4, BG_GROUND, 16, 12, levelData);
+  placeTile(6, 4, BG_PILLAR, 16, 12, levelData);
+  placeTile(9, 4, BG_PILLAR, 16, 12, levelData);
+  placeTile(8, 2, BG_COIN, 16, 12, levelData);
+  placeTile(9, 2, BG_COIN, 16, 12, levelData);
+  placeHoriz(11, 3, 4, BG_GROUND, 16, 12, levelData);
+  placeTile(14, 2, BG_EXIT, 16, 12, levelData);
+  placeTile(11, 4, BG_PILLAR, 16, 12, levelData);
+  placeTile(13, 4, BG_PILLAR, 16, 12, levelData);
+  placeTile(3, 2, BG_VENT, 16, 12, levelData);
+  placeTile(12, 1, BG_VENT, 16, 12, levelData);
+  objects[0].setProperties(OBJ_ROBOT, (short)650, (short)425, (byte)((~(speed & 3))+1), (short)550, (short)700);
+  objects[1].setProperties(OBJ_ROBOT, (short)350, (short)125, (byte)(speed & 3), (short)300, (short)500);
+  objects[2].setProperties(OBJ_ROCKET, (short)300, (short)250, (byte)((speed >> 2) & 7), (short)100, (short)525);
+  objects[3].setProperties(OBJ_PLAT_VERT, (short)700, (short)300, (byte)2, (short)(300), (short)(600));
+  objects[4].setProperties(OBJ_PLAT_VERT, (short)150, (short)375, (byte)-2, (short)(200), (short)(375));
   for(byte i = 5; i < 7; i++)
     objects[i].setProperties();
   
@@ -1315,17 +1324,17 @@ void zeroLevel(int sizeX, int sizeY, byte[][] back, byte[] gb, byte arrowPoses){
       gb[0]= (byte)(-92);
       gb[1] = (byte)(-24);
       for(int i = 0; i < sizeX; i++)
-        back[i][sizeY-1] = -7;
+        back[i][sizeY-1] = -8|BG_GROUND;
       break;
     default:
       gb[0]= gb[1] = 0;
      for(int i = 0; i < 16; i++){
-       levelData[i][0] = -7;
-       levelData[i][11] = -7;
+       levelData[i][0] = -8|BG_GROUND;
+       levelData[i][11] = -8|BG_GROUND;
      }
      for(int i = 1; i < 11; i++){
-       levelData[0][i] = -7;
-       levelData[15][i] = -7;
+       levelData[0][i] = -8|BG_GROUND;
+       levelData[15][i] = -8|BG_GROUND;
      }
      break;
   }
@@ -1416,7 +1425,7 @@ void drawBack(byte frameCounter, Player currPlayer, TextMod mod, byte[][] backgr
     for(int j = 0; j < backHeight; j++){
       tileY = 50*j;
       switch((background[i][j] & 7)){
-        case 1:
+        case BG_GROUND:
            if(currPlayer.returnY()+25 > tileY && currPlayer.returnY()+25 < tileY+50){
             if(currPlayer.returnX()+50 >= tileX && currPlayer.returnX() <= tileX+25){
               if((currPlayer.returnState() & 2) == 0)
@@ -1448,7 +1457,7 @@ void drawBack(byte frameCounter, Player currPlayer, TextMod mod, byte[][] backgr
             }
           } 
           break;
-        case 2:
+        case BG_COIN:
           if(fifteen == 15)
             background[i][j]+=8;
           if(background[i][j] > 24)
@@ -1483,7 +1492,7 @@ void drawBack(byte frameCounter, Player currPlayer, TextMod mod, byte[][] backgr
             }
           }
           break;
-        case 3:
+        case BG_EXIT:
           if(coinCount[0] >= goalCount){
             if(currPlayer.returnX()+50 >= tileX+12 && currPlayer.returnX() <= tileX+37 && currPlayer.returnY()+50 >= tileY+7 && currPlayer.returnY() <= tileY+42)
               arrowPosition[0]|=8;
@@ -1505,26 +1514,26 @@ void drawBack(byte frameCounter, Player currPlayer, TextMod mod, byte[][] backgr
           }
           characters[38].draw(tileX+12, tileY+7);
           break;
-        case 4:
+        case BG_PILLAR:
           characters[pillarRef[0]].draw(tileX, tileY); 
           for(int s = 1; (background[i][s+j] & 7) != 1; s++)
             characters[pillarRef[1]].draw(tileX, (s+j)*50); 
 
           break;
-        case 5:
+        case BG_VENT:
           characters[61].draw(tileX+11, tileY+11, 14, 14);
           characters[63].draw(tileX+11, tileY+25, 14, 14);
           characters[64].draw(tileX+25, tileY+25, 14, 14);
           characters[62].draw(tileX+25, tileY+11, 14, 14);
           break;
-        case 6:
+        case BG_SCORE:
           characters[42].draw(tileX+11, tileY+17-((background[i][j] >> 3) & 31), 28, 20);
           if((frameCounter & 4) == 4)
             background[i][j]+=8;
           if(((background[i][j] >> 3) & 31) >= 31)
             background[i][j] = -8;
           break;
-        case 7:
+        case BG_TELE:
           if(currPlayer.returnX()+50 >= tileX+25 && currPlayer.returnX() <= tileX && currPlayer.returnY()+50 >= tileY+25 && currPlayer.returnY() <= tileY)
             arrowPos[0]|=8;
           break;
@@ -1541,7 +1550,7 @@ void drawGround(byte[][] background, int backWidth, int backHeight){
     tileX = i*50;
     for(int j = 0; j < backHeight; j++){
       tileY = j*50;
-      if((background[i][j] & 7) == 1)
+      if((background[i][j] & 7) == BG_GROUND)
         characters[groundRef].draw(tileX, tileY, 50, 50);
     }
   }

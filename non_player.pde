@@ -76,7 +76,7 @@ class NonPlayerEnt extends MovingObject{
       yPos = (bound2+bound1)*0.5f;
       bound2 = yPos-31;
       xPos-=2;
-      id = 6;
+      id = OBJ_PLUS_ONE;
     }
   }
   void vertPlat(Player player, Graphics platformGraphic){
