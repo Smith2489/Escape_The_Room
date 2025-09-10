@@ -13,10 +13,14 @@ final char RED_P = 36;
 final char RED_COLON = 47;
 
 
+
+final byte TILE_SIZE = 50;
+
 final byte GO_SIZE = 24;
 final byte MAX_LEVEL = 7;
 
 //IDs for the background tiles
+final byte BG_NONE = -8;
 final byte BG_GROUND = 1;
 final byte BG_COIN = 2;
 final byte BG_EXIT = 3;
@@ -26,6 +30,7 @@ final byte BG_SCORE = 6;
 final byte BG_TELE = 7;
 
 //IDs for moving objects
+final byte OBJ_NONE = -1;
 final byte OBJ_ROBOT = 1;
 final byte OBJ_ROCKET = 2;
 final byte OBJ_PLAT_VERT = 3;
@@ -40,21 +45,51 @@ final byte INSIDE_PILLAR_STEM = 60;
 final byte OUTSIDE_GROUND = 65;
 final byte OUTSIDE_PILLAR_STEM = 66;
 
+final byte BONUS_TEXT_LENGTH = 6; //index 0
+final byte CURR_SCORE_TEXT_LENGTH = 12; // index 1
+final byte HIGH_SCORE_TEXT_LENGTH = 11; //index 2
+final byte LIVES_TEXT_LENGTH = 9; //index 3
+final byte SCORE_BONUS_TEXT_LENGTH = 12; //index 4
+final byte TIME_REMAIN_TEXT_LENGTH = 9; //index 5
+final byte READY_TEXT_LENGTH = 6; //index 7
+final byte GAME_OVER_TEXT_LENGTH = 9; //index 8
+final byte MENU_TEXT_LENGTH = 13; //indices 9-11
+final byte ENTER_TEXT_LENGTH = 11; //index 12
+final byte CUTSCENE_TEXT_LENGTH = 16; //index 13
+final byte PAUSE_TEXT_LENGTH = 5; //indx 14
+final byte QUESTION_MARK_TEXT_LENGTH = 1; //index 15
+
+final byte ROUND_START_TEXT_LENGTH_LONG = 12; //index 6
+final byte ROUND_START_TEXT_LENGTH_SHORT = 8; //index 6
+final byte ROUND_START_TEXT_SIZE = 32;
+
+final byte MODE_GAME_A = 0;
+final byte MODE_GAME_B = 1;
+final byte MODE_RESET_SCORE = 2;
+final byte MODE_EXIT = 3;
+
+final short WIDTH = 800;
+final short HEIGHT = 600;
+
+final short GO_MID_X = (short)((WIDTH - GAME_OVER_TEXT_LENGTH*GO_SIZE) >> 1);
+final short GO_MID_Y = (short)((HEIGHT - GO_SIZE) >> 1);
+
 
 final int TEXT_SIZE = 32;
 
-
-final short MIN_KEY[] = {0xF0, 0x9E, 0xBE};
-final short MAX_KEY[] = {0xFF, 0xCD, 0xEC};
-
-final short GO_MID_X = (short)((800 - 9*GO_SIZE) >> 1);
-final short GO_MID_Y = (short)((600 - GO_SIZE) >> 1);
+final int SCREEN_WIDTH_TILES = WIDTH/TILE_SIZE;
+final int SCREEN_HEIGHT_TILES = HEIGHT/TILE_SIZE;
 
 
 final byte[] CUT_IDS = {OBJ_ROBOT, OBJ_ROCKET};
 
-final byte[] TEXT_LENGTHS = {6, 12, 11, 9, 12, 9, 12, 6, 9, 7, 7, 13, 11, 16, 5, 1};
 
+
+final short ROUND_START_TEXT_X_LONG = (short)((WIDTH-(ROUND_START_TEXT_LENGTH_LONG*ROUND_START_TEXT_SIZE))>>>1);
+final short ROUND_START_TEXT_X_SHORT = (short)((WIDTH-(ROUND_START_TEXT_LENGTH_SHORT*ROUND_START_TEXT_SIZE))>>>1);
+
+final short MIN_KEY[] = {0xF0, 0x9E, 0xBE};
+final short MAX_KEY[] = {0xFF, 0xCD, 0xEC};
 
 final short[] INTRO_INPUTS = {2177, 127, 1025, 127, 2303};
 final short[] ENDING_INPUTS = {2177, 15, 4111, 170, 4111, 170, 4111, 170, 1279};
@@ -111,7 +146,7 @@ byte[] soundPointers = {0, 0};//byte 0 is the square, byte 1 is the saw
 byte[] soundTimers = {0, 0};
 int[] surrPos = new int[3];
 int[] surrY = new int[3];
-byte[][] levelData = new byte[16][12];//The data containing all non-moving elements in a level
+byte[][] levelData = new byte[SCREEN_WIDTH_TILES][SCREEN_HEIGHT_TILES];//The data containing all non-moving elements in a level
 short[][] soundDurations = {{0, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0}}; 
 short[][] frequencies = {{0, 0 , 0, 0 ,0 ,0}, {0, 0, 0, 0, 0, 0}};
 
@@ -158,6 +193,9 @@ char[] bonusText = {'B', 'O', 'N', 'U', 'S', '!', 0};
 char[] questionMark = {'?', 0};
 char[] max = {'2', '5', '0'};
 float vol = 0.25;
+
+short roundStartTextX = 0;
+
 void setup(){
   file = new File("Escape_The_Room2/score.bin");
   scanlines = new File("Escape_The_Room2/option.txt");
@@ -178,7 +216,7 @@ void setup(){
         tempScore = "0020000";
         writer.close();
       }
-      for(byte i = 4; i < TEXT_LENGTHS[2]; i++)
+      for(byte i = 4; i < HIGH_SCORE_TEXT_LENGTH; i++)
         highScore[i] = highComp[i-4] = tempScore.charAt(i-4);
     }
     reader.close();
@@ -260,7 +298,7 @@ void setup(){
      System.exit(-1);
   }
 
-  size(800, 600);
+  size(800, 600);//For some reason, Processing does not like it when you pass in either variables or named constants into size
   noCursor();
   noSmooth();
   stroke(#000000);
@@ -341,7 +379,7 @@ void setup(){
 
   for(int i = 0; i < 16; i++)
      for(int j = 0; j < 12; j++)
-       levelData[i][j] = 0;
+       levelData[i][j] = BG_NONE;
   currPlayer = new Player();
   for(int i = 0; i < 7; i++)
      objects[i] = new NonPlayerEnt();
@@ -403,7 +441,7 @@ void draw(){
 
      if((attractMode & 256) == 256){
        if((arrowPos[0] & 16) == 0){
-         textDraw(gameOver, TEXT_LENGTHS[8], GO_MID_X, (short)250, GO_SIZE);
+         textDraw(gameOver, GAME_OVER_TEXT_LENGTH, GO_MID_X, (short)250, GO_SIZE);
          for(byte i = 5; i < 12; i++)
            score[i] = '0';
          for(byte i = 6; i < 9; i++)
@@ -419,7 +457,7 @@ void draw(){
           rect(600, 450, 200, 175);
           attractMode = autoPlayer(INTRO_INPUTS, (byte)5, attractMode, objects, (byte)2, CUT_IDS, (byte)2);
           if(((attractMode >> 9) & 127) == 1)
-             textDraw(questionMark, (byte)1, (short)370, (short)480, (byte)8);
+             textDraw(questionMark, QUESTION_MARK_TEXT_LENGTH, (short)370, (short)480, (byte)8);
           else if(((attractMode >> 9) & 127) > 3 || (((attractMode >> 9) & 127) > 2) && (attractMode & 255) <= 63)
             textDraw(cutText[2], (byte)6, (short)360, (short)480, (byte)8);
        }
@@ -442,7 +480,7 @@ void draw(){
        switch(levelCount){
          case MAX_LEVEL:
            attractMode = autoPlayer(ENDING_INPUTS, (byte)8, attractMode, objects, (byte)2, CUT_IDS, (byte)6);
-           textDraw(cutText[0], TEXT_LENGTHS[13], (short)272, (short)128, (byte)16);
+           textDraw(cutText[0], CUTSCENE_TEXT_LENGTH, (short)272, (short)128, (byte)16);
            if(((attractMode >> 9) & 127) >= 1){
              textDraw(cutText[1], (byte)12, (short)304, (short)147, (byte)16);
              if(((attractMode >> 9) & 127) >= 7)
@@ -455,7 +493,7 @@ void draw(){
            rect(600, 450, 200, 175);
            attractMode = autoPlayer(INTRO_INPUTS, (byte)5, attractMode, objects, (byte)2, CUT_IDS, (byte)2);
            if(((attractMode >> 9) & 127) == 1)
-              textDraw(questionMark, (byte)1, (short)370, (short)480, (byte)8);
+              textDraw(questionMark, QUESTION_MARK_TEXT_LENGTH, (short)370, (short)480, (byte)8);
            else if(((attractMode >> 9) & 127) > 3 || (((attractMode >> 9) & 127) > 2) && (attractMode & 255) <= 63)
                textDraw(cutText[2], (byte)6, (short)360, (short)480, (byte)8);
            break;
@@ -485,12 +523,12 @@ void draw(){
          gameOverTime&=-257;
        }
        if((arrowPos[0] & 16) == 0){
-         textDraw(score, TEXT_LENGTHS[1], (short)55, (short)55, (byte)8);
-         textDraw(bonusText, TEXT_LENGTHS[0], (short)256, (short)248, (byte)48);
-         textDraw(lives, TEXT_LENGTHS[3], (short)55, (short)66, (byte)8);
-         textDraw(highScore, TEXT_LENGTHS[2], (short)55, (short)77, (byte)8);
-         textDraw(bonus, TEXT_LENGTHS[4], (short)55, (short)88, (byte)8);
-         textDraw(time, TEXT_LENGTHS[5], (short)55, (short)99, (byte)8);
+         textDraw(score, CURR_SCORE_TEXT_LENGTH, (short)55, (short)55, (byte)8);
+         textDraw(bonusText, BONUS_TEXT_LENGTH, (short)256, (short)248, (byte)48);
+         textDraw(lives, LIVES_TEXT_LENGTH, (short)55, (short)66, (byte)8);
+         textDraw(highScore, HIGH_SCORE_TEXT_LENGTH, (short)55, (short)77, (byte)8);
+         textDraw(bonus, SCORE_BONUS_TEXT_LENGTH, (short)55, (short)88, (byte)8);
+         textDraw(time, TIME_REMAIN_TEXT_LENGTH, (short)55, (short)99, (byte)8);
        }
        if((frameCounter & 64) == 0){
          if(wrapper.digitEqual(time, 6, (byte)0, (byte)3) && (arrowPos[0] & 16) == 0){
@@ -500,7 +538,7 @@ void draw(){
          }
         
         //Main part of game loop
-        drawBack((byte)(frameCounter & 63), currPlayer, wrapper, levelData, 16, 12, coinCounter, goalCount, score, arrowPos, sqr, soundDurations, frequencies, soundPointers, soundTimers);
+        drawBack((byte)(frameCounter & 63), currPlayer, wrapper, levelData, coinCounter, goalCount, score, arrowPos, sqr, soundDurations, frequencies, soundPointers, soundTimers);
 
         for(int i = endPoint-1; i >= 0; i--){
            switch(objects[i].returnID()){
@@ -525,7 +563,7 @@ void draw(){
            }
          }
          currPlayer.controlPlayer(wrapper, playerFrames, keyInputs, lives, (byte)2, (byte)0, 7, saw, soundDurations[1], frequencies[1], soundPointers, soundTimers, arrowPos, time, max);
-         drawGround(levelData, 16, 12);
+         drawGround(levelData);
           if((arrowPos[0] & 4) == 0){
             if(goalCount > 0 && coinCounter[0] >= goalCount && (gameOverTime & 255) < 127)
               gameOverTime++;
@@ -576,7 +614,7 @@ void draw(){
           zeroLevel(16, 12, levelData, nonRedColours, arrowPos[0]);
           coinCounter[0] = 0;
           if(levelCount != 4)
-            for(byte i = 0; i < TEXT_LENGTHS[0]; i++)
+            for(byte i = 0; i < BONUS_TEXT_LENGTH; i++)
               bonusText[i] = 0;
           else{
             bonusText[0] = 'B';
@@ -588,28 +626,28 @@ void draw(){
           }
           switch(levelCount){
             case 1:
-               TEXT_LENGTHS[6] = 8;
-               stageStart[7] = '1';
-               for(byte i = 8; i < stageStart.length; i++)
-                 stageStart[i] = 0;
+              roundStartTextX = ROUND_START_TEXT_X_SHORT;
+              stageStart[7] = '1';
+              for(byte i = 8; i < stageStart.length; i++)
+                stageStart[i] = 0;
               loadLevel1(enSpeed);
               break;
             case 2:
-              TEXT_LENGTHS[6] = 8;
-               stageStart[7] = '2';
-               for(byte i = 8; i < stageStart.length; i++)
-                 stageStart[i] = 0;
-                 loadLevel2(enSpeed);
+              roundStartTextX = ROUND_START_TEXT_X_SHORT;
+              stageStart[7] = '2';
+              for(byte i = 8; i < stageStart.length; i++)
+                stageStart[i] = 0;
+                loadLevel2(enSpeed);
               break;
             case 3:
-               TEXT_LENGTHS[6] = 8;
-               stageStart[7] = '3';
-               for(byte i = 8; i < stageStart.length; i++)
-                 stageStart[i] = 0;
+              roundStartTextX = ROUND_START_TEXT_X_SHORT;
+              stageStart[7] = '3';
+              for(byte i = 8; i < stageStart.length; i++)
+                stageStart[i] = 0;
               loadLevel3(enSpeed);
               break;
             case 4:
-              TEXT_LENGTHS[6] = 12;
+              roundStartTextX = ROUND_START_TEXT_X_LONG;
               stageStart[7] = 'B';
               stageStart[8] = 'O';
               stageStart[9] = 'N';
@@ -618,22 +656,22 @@ void draw(){
               loadLevel4();
               break;
             case 5:
-               TEXT_LENGTHS[6] = 8;
-               stageStart[7] = '4';
-               for(byte i = 8; i < stageStart.length; i++)
-                 stageStart[i] = 0;
+              roundStartTextX = ROUND_START_TEXT_X_SHORT;
+              stageStart[7] = '4';
+              for(byte i = 8; i < stageStart.length; i++)
+                stageStart[i] = 0;
               loadLevel5(enSpeed);
               break;
             case 6:
-              TEXT_LENGTHS[6] = 8;
+              roundStartTextX = ROUND_START_TEXT_X_SHORT;
               stageStart[7] = '5';
               for(byte i = 8; i < stageStart.length; i++)
                 stageStart[i] = 0;
                 loadLevel7(enSpeed);
               break;
             case MAX_LEVEL:
+              roundStartTextX = ROUND_START_TEXT_X_LONG;
               gameOverTime|=65024;
-              TEXT_LENGTHS[6] = 12;
               stageStart[7] = 'B';
               stageStart[8] = 'R';
               stageStart[9] = 'E';
@@ -642,9 +680,9 @@ void draw(){
               loadLevel6();
               break;
             default:
+              roundStartTextX = ROUND_START_TEXT_X_SHORT;
               levelCount = 1;
               loadLevel1(enSpeed);
-              TEXT_LENGTHS[6] = 8;
               stageStart[7] = '1';
               for(byte i = 8; i < stageStart.length; i++)
                 stageStart[i] = 0;
@@ -664,11 +702,11 @@ void draw(){
        }
        else{
          saw.stop();
-          drawBack((byte)(frameCounter & 63), currPlayer, wrapper, levelData, 16, 12, coinCounter, goalCount, score, arrowPos, sqr, soundDurations, frequencies, soundPointers, soundTimers);
+          drawBack((byte)(frameCounter & 63), currPlayer, wrapper, levelData, coinCounter, goalCount, score, arrowPos, sqr, soundDurations, frequencies, soundPointers, soundTimers);
           if((frameCounter & 63) >= 0 && (frameCounter & 63) <= 30)
-            textDraw(pauseText, TEXT_LENGTHS[13], (short)340, (short)(250), (byte)24);
+            textDraw(pauseText, PAUSE_TEXT_LENGTH, (short)340, (short)(250), (byte)24);
        }
-       drawGround(levelData, 16, 12);
+       drawGround(levelData);
        if((attractMode & 256) == 0){
          oscPlay(saw, soundTimers, soundPointers, frequencies, soundDurations, arrowPos, (byte)1, (byte)32, (byte)6);
          oscPlay(sqr, soundTimers, soundPointers, frequencies, soundDurations, arrowPos, (byte)0, (byte)64, (byte)6);
@@ -693,8 +731,8 @@ void draw(){
        }
        gameOverTime+=512;
        titleTime = 0;
-       textDraw(stageStart, TEXT_LENGTHS[6], (short)((800 - (TEXT_LENGTHS[6]*32)) >> 1), (short)252, (byte)32);
-       textDraw(readyText, TEXT_LENGTHS[7], (short)(304), (short)(300), (byte)32);
+       textDraw(stageStart, ROUND_START_TEXT_LENGTH_LONG, roundStartTextX, (short)252, (byte)32);
+       textDraw(readyText, READY_TEXT_LENGTH, (short)(304), (short)(300), (byte)32);
        if((keyInputs & 32) == 32 && (gameOverTime & 256) == 0){
          gameOverTime = -256;
        }
@@ -708,7 +746,7 @@ void draw(){
          bonus[7] = '0';
          bonus[8] = '5';
        }
-       for(byte i = 9; i < TEXT_LENGTHS[4]; i++)
+       for(byte i = 9; i < SCORE_BONUS_TEXT_LENGTH; i++)
          bonus[i] = '0';
        time[6] = max[0];
        time[7] = max[1];
@@ -752,7 +790,7 @@ void draw(){
        }
        titleLogoY = 1080;
        titleLogoX = 0;
-       textDraw(gameOver, TEXT_LENGTHS[8], GO_MID_X, GO_MID_Y, GO_SIZE);
+       textDraw(gameOver, GAME_OVER_TEXT_LENGTH, GO_MID_X, GO_MID_Y, GO_SIZE);
        gameOverTime++;
        if((keyInputs & 32) == 32){
          gameOverTime = 457;
@@ -817,7 +855,7 @@ void draw(){
            currPlayer.setY((short)(500));
            currPlayer.setYSpeed((byte)(0));
            currPlayer.setState((byte)(0));
-           for(byte i = 0; i < TEXT_LENGTHS[0]; i++)
+           for(byte i = 0; i < BONUS_TEXT_LENGTH; i++)
              bonusText[i] = 0;
            
            
@@ -826,10 +864,10 @@ void draw(){
          }
          for(byte i = 0; i < 4; i++){
            gameText[i][0] = (i == ((titleTime >> 9) & 3)) ? '>' : ' ';
-           textDraw(gameText[i], TEXT_LENGTHS[9+i], (short)256, (short)(375+25*i), (byte)24);
+           textDraw(gameText[i], MENU_TEXT_LENGTH, (short)256, (short)(375+25*i), (byte)24);
          }
          if(frameCounter >= 0 && frameCounter <= 30)
-           textDraw(enterText, TEXT_LENGTHS[12], (short)268, (short)500, (byte)24);
+           textDraw(enterText, ENTER_TEXT_LENGTH, (short)268, (short)500, (byte)24);
          if((keyInputs & 3) != 0){
            if((titleTime & 2048) == 0){
              if((keyInputs & 3) == 1)
@@ -850,75 +888,44 @@ void draw(){
          if((keyInputs & 32) == 32){
            if((gameOverTime & 256) == 0){
 
-             if(((titleTime >> 9) & 3) < 2){
-               red = 0;
-               if(((titleTime >> 9) & 3) == 0){
+             switch((titleTime >> 9) & 3){
+               case MODE_GAME_A:
                  enSpeed = 14;
                  oneUpFlash|=64;
-               }
-               else{
+                 initializeGame();
+                 break;
+                 
+               case MODE_GAME_B:
                  enSpeed = 23;
                  oneUpFlash&=-65;
-               }
-               lives[8] = '3';
-               oneUpFlash&=-64;
-               for(byte i = 5; i < 12; i++)
-                 score[i] = '0';
-               TEXT_LENGTHS[6] = 8;
-               stageStart[7] = '1';
-               soundSize&=63;
-               for(byte i = 8; i < stageStart.length; i++)
-                 stageStart[i] = 0;
-               coinCounter[0] = 0;
-               sqr.stop();
-               saw.stop();
-               attractMode = 0;
-               secondScore = 0;
-               arrowPos[0]&=-128;
-               for(byte i = 0; i < TEXT_LENGTHS[0]; i++)
-                 bonusText[i] = 0;
-               currPlayer.setXSpeed((byte)(0));
-               currPlayer.setYSpeed((byte)(0));
-               currPlayer.setState((byte)(0));
-               currPlayer.setY((short)(500));
-               if((isSmoothed & 4) == 0){
-                 levelCount = 0;
-                 currPlayer.setX(-150);
-                 loadLevel0();
-                 gameOverTime = -512;
-               }
-               else{
-                  levelCount = 1;
-                  currPlayer.setX((short)100);
-                  loadLevel1(enSpeed);
-                  gameOverTime = 256;
-               }
+                 initializeGame();
+                 break;
+                 
+               case MODE_RESET_SCORE:
+                 gameOverTime = 457;
+                 red = -1;
+                 nonRedColours[0] = -1;
+                 nonRedColours[1] = -1;
+                 try{
+                   writer = new FileWriter(file, false);
+                   writer.write("0020000");
+                   writer.close();
+                 }
+                 catch(Exception e){
+                   e.printStackTrace();
+                   System.exit(-1);
+                 }
+                 highScore[4] = highScore[5] = highComp[0] = highComp[1] =  '0';
+                 highScore[6] = highComp[3] = '2';
+                 for(byte i = 7; i < HIGH_SCORE_TEXT_LENGTH; i++)
+                   highScore[i] = highComp[i-4] = '0';
+                 break;
+                 
+               case MODE_EXIT:
+                 System.exit(0);
+                 break;
+                 
 
-             }
-             else{
-               switch(((titleTime >> 9) & 3)){
-                 case 2:
-                   gameOverTime = 457;
-                   red = -1;
-                   nonRedColours[0] = -1;
-                   nonRedColours[1] = -1;
-                   try{
-                     writer = new FileWriter(file, false);
-                     writer.write("0020000");
-                     writer.close();
-                   }
-                   catch(Exception e){
-                     e.printStackTrace();
-                     System.exit(-1);
-                   }
-                   highScore[4] = highScore[5] = highComp[0] = highComp[1] =  '0';
-                   highScore[6] = highComp[3] = '2';
-                   for(byte i = 7; i < TEXT_LENGTHS[2]; i++)
-                     highScore[i] = highComp[i-4] = '0';
-                   break;
-                 case 3:
-                   System.exit(0);
-               }
              }
            }
          }
@@ -998,7 +1005,6 @@ short autoPlayer(short[] inputs, byte inputNum, short tracker, NonPlayerEnt[] ob
 }
 
 void loadLevel0(){
-
   keyInputs = 0;
   arrowPos[0]|=16;
   groundRef = OUTSIDE_GROUND;
@@ -1010,21 +1016,21 @@ void loadLevel0(){
   bonus[7] = '0';
   bonus[8] = '0';
   time[6] = time[7] = time[8] = '9';
-  placeTile(12, 8, BG_GROUND, 16, 12, levelData);
-  placeRect(13, 7, 3, 4, BG_GROUND, 16, 12, levelData);
-  placeHoriz(14, 6, 2, BG_GROUND, 16, 12, levelData);
-  placeHoriz(5, 8, 3, BG_GROUND, 16, 12, levelData);
-  placeTile(6, 7, BG_GROUND, 16, 12, levelData);
-  placeTile(6, 8, BG_PILLAR, 16, 12, levelData);
-  placeHoriz(9, 3, 3, BG_GROUND, 16, 12, levelData);
-  placeTile(10, 2, BG_GROUND, 16, 12, levelData);
-  placeTile(10, 3, BG_PILLAR, 16, 12, levelData);
-  placeHoriz(2, 5, 3, BG_GROUND, 16, 12, levelData);
-  placeTile(3, 4, BG_GROUND, 16, 12, levelData);
-  placeTile(3, 5, BG_PILLAR, 16, 12, levelData);
-  placeTile(12, 10, BG_TELE, 16, 12, levelData);
-  objects[0].setProperties((byte)-1, (short)-150, (short)525, (byte)2, (short)-150, (short)(800));
-  objects[1].setProperties((byte)-1, (short)-150, (short)500, (byte)2, (short)-150, (short)(800));
+  placeTile(12, 8, BG_GROUND, levelData);
+  placeRect(13, 7, 3, 4, BG_GROUND, levelData);
+  placeHoriz(14, 6, 2, BG_GROUND, levelData);
+  placeHoriz(5, 8, 3, BG_GROUND, levelData);
+  placeTile(6, 7, BG_GROUND, levelData);
+  placeTile(6, 8, BG_PILLAR, levelData);
+  placeHoriz(9, 3, 3, BG_GROUND, levelData);
+  placeTile(10, 2, BG_GROUND, levelData);
+  placeTile(10, 3, BG_PILLAR, levelData);
+  placeHoriz(2, 5, 3, BG_GROUND, levelData);
+  placeTile(3, 4, BG_GROUND, levelData);
+  placeTile(3, 5, BG_PILLAR, levelData);
+  placeTile(12, 10, BG_TELE, levelData);
+  objects[0].setProperties(OBJ_NONE, (short)-150, (short)525, (byte)2, (short)-150, (short)(800));
+  objects[1].setProperties(OBJ_NONE, (short)-150, (short)500, (byte)2, (short)-150, (short)(800));
   for(byte i = 2; i < 7; i++)
     objects[i].setProperties();
 }
@@ -1037,24 +1043,24 @@ void loadLevel1(byte enemySpeed){
   zeroLevel(16, 12, levelData, nonRedColours, arrowPos[0]);
   goalCount = 5;
   endPoint = 3;
-  placeTile(8, 10, BG_GROUND, 16, 12, levelData); 
-  placeHoriz(9, 10, 3, BG_COIN, 16, 12, levelData);
-  placeTile(9, 9, BG_GROUND, 16, 12, levelData); 
-  placeHoriz(10, 8, 2, BG_GROUND, 16, 12, levelData);
-  placeHoriz(6, 6, 6, BG_GROUND, 16, 12, levelData);
-  placeHoriz(9, 6, 2, 0, 16, 12, levelData);
-  placeTile(5, 7, BG_GROUND, 16, 12, levelData); 
-  placeTile(5, 6, BG_COIN, 16, 12, levelData);
-  placeTile(3, 7, BG_GROUND, 16, 12, levelData); 
-  placeTile(3, 6, BG_COIN, 16, 12, levelData);
-  placeHoriz(1, 6, 2, BG_GROUND, 16, 12, levelData);
-  placeTile(11, 7, BG_PILLAR, 16, 12, levelData); 
-  placeTile(11, 9, BG_PILLAR, 16, 12, levelData); 
-  placeTile(7, 7, BG_PILLAR, 16, 12, levelData); 
-  placeTile(5, 8, BG_PILLAR, 16, 12, levelData); 
-  placeTile(3, 8, BG_PILLAR, 16, 12, levelData); 
-  placeTile(11, 4, BG_VENT, 16, 12, levelData); 
-  placeTile(1, 5, BG_EXIT, 16, 12, levelData); 
+  placeTile(8, 10, BG_GROUND, levelData); 
+  placeHoriz(9, 10, 3, BG_COIN, levelData);
+  placeTile(9, 9, BG_GROUND, levelData); 
+  placeHoriz(10, 8, 2, BG_GROUND, levelData);
+  placeHoriz(6, 6, 3, BG_GROUND, levelData);
+  placeTile(11, 6, BG_GROUND, levelData);
+  placeTile(5, 7, BG_GROUND, levelData); 
+  placeTile(5, 6, BG_COIN, levelData);
+  placeTile(3, 7, BG_GROUND, levelData); 
+  placeTile(3, 6, BG_COIN, levelData);
+  placeHoriz(1, 6, 2, BG_GROUND, levelData);
+  placeTile(11, 7, BG_PILLAR, levelData); 
+  placeTile(11, 9, BG_PILLAR, levelData); 
+  placeTile(7, 7, BG_PILLAR, levelData); 
+  placeTile(5, 8, BG_PILLAR, levelData); 
+  placeTile(3, 8, BG_PILLAR, levelData); 
+  placeTile(11, 4, BG_VENT, levelData); 
+  placeTile(1, 5, BG_EXIT, levelData); 
   objects[0].setProperties(OBJ_ROBOT, (short)300, (short)525, (byte)(enemySpeed & 3), (short)150, (short)400);
   objects[1].setProperties(OBJ_ROCKET, (short)200,(short)225, (byte)((enemySpeed >> 2) & 7), (short)175,(short)300);
   objects[2].setProperties(OBJ_PLAT_VERT, (short)700, (short)400, (byte)2, (short)300, (short)575);
@@ -1071,18 +1077,18 @@ void loadLevel2(byte enemySpeed){
     endPoint = 4;
     if(randomNum > 0 && (oneUpFlash & 64) == 64)
       endPoint++;
-    placeTile(1, 10, BG_EXIT, 16, 12, levelData);
-    placeHoriz(4, 10, 9, BG_GROUND, 16, 12, levelData);
-    placeHoriz(9, 9, 4, BG_GROUND, 16, 12, levelData);
-    placeHoriz(10, 8, 3, BG_GROUND, 16, 12, levelData);
-    placeHoriz(1, 6, 3, BG_GROUND, 16, 12, levelData);
-    placeHoriz(1, 5, 3, BG_COIN, 16, 12, levelData);
-    placeHoriz(11, 7, 2, BG_COIN, 16, 12, levelData);
-    placeHoriz(11, 7, 2, BG_COIN, 16, 12, levelData);
-    placeHoriz(13, 10, 2, BG_COIN, 16, 12, levelData);
-    placeTile(3, 7, BG_PILLAR, 16, 12, levelData);
-    placeTile(4, 4, BG_VENT, 16, 12, levelData);
-    placeTile(10, 4, BG_VENT, 16, 12, levelData);
+    placeTile(1, 10, BG_EXIT, levelData);
+    placeHoriz(4, 10, 9, BG_GROUND, levelData);
+    placeHoriz(9, 9, 4, BG_GROUND, levelData);
+    placeHoriz(10, 8, 3, BG_GROUND, levelData);
+    placeHoriz(1, 6, 3, BG_GROUND, levelData);
+    placeHoriz(1, 5, 3, BG_COIN, levelData);
+    placeHoriz(11, 7, 2, BG_COIN, levelData);
+    placeHoriz(11, 7, 2, BG_COIN, levelData);
+    placeHoriz(13, 10, 2, BG_COIN, levelData);
+    placeTile(3, 7, BG_PILLAR, levelData);
+    placeTile(4, 4, BG_VENT, levelData);
+    placeTile(10, 4, BG_VENT, levelData);
     objects[0].setProperties(OBJ_ROBOT, (short)50, (short)275, (byte)(enemySpeed & 3), (short)50, (short)150);
     objects[1].setProperties(OBJ_ROBOT, (short)250, (short)475, (byte)(enemySpeed & 3), (short)200, (short)400);
     objects[2].setProperties(OBJ_PLAT_VERT, (short)700,(short)450, (byte)2, (short)400, (short)575);
@@ -1101,19 +1107,19 @@ void loadLevel3(byte enemySpeed){
     goalCount = 12;
     if(randomNum > 0 && (oneUpFlash & 64) == 64)
       endPoint++;
-    placeRect(9, 7, 6, 4, BG_GROUND, 16, 12, levelData);
-    placeHoriz(9, 6, 6, BG_COIN, 16, 12, levelData);
-    placeHoriz(1, 7, 6, BG_GROUND, 16, 12, levelData);
-    placeHoriz(1, 6, 6, BG_COIN, 16, 12, levelData);
-    placeHoriz(9, 3, 6, BG_GROUND, 16, 12, levelData);
-    placeTile(14, 2, BG_EXIT, 16, 12, levelData);
-    placeTile(2, 8, BG_PILLAR, 16, 12, levelData);
-    placeTile(4, 8, BG_PILLAR, 16, 12, levelData);
-    placeTile(6, 8, BG_PILLAR, 16, 12, levelData);
-    placeTile(9, 4, BG_PILLAR, 16, 12, levelData);
-    placeTile(11, 4, BG_PILLAR, 16, 12, levelData);
-    placeTile(13, 4, BG_PILLAR, 16, 12, levelData);
-    placeTile(6, 3, BG_VENT, 16, 12, levelData);
+    placeRect(9, 7, 6, 4, BG_GROUND, levelData);
+    placeHoriz(9, 6, 6, BG_COIN, levelData);
+    placeHoriz(1, 7, 6, BG_GROUND, levelData);
+    placeHoriz(1, 6, 6, BG_COIN, levelData);
+    placeHoriz(9, 3, 6, BG_GROUND, levelData);
+    placeTile(14, 2, BG_EXIT, levelData);
+    placeTile(2, 8, BG_PILLAR, levelData);
+    placeTile(4, 8, BG_PILLAR, levelData);
+    placeTile(6, 8, BG_PILLAR, levelData);
+    placeTile(9, 4, BG_PILLAR, levelData);
+    placeTile(11, 4, BG_PILLAR, levelData);
+    placeTile(13, 4, BG_PILLAR, levelData);
+    placeTile(6, 3, BG_VENT, levelData);
     objects[0].setProperties(OBJ_ROBOT, (short)600, (short)125, (byte)(enemySpeed & 3), (short)475, (short)725);
     objects[1].setProperties(OBJ_ROBOT, (short)250, (short)325, (byte)(enemySpeed & 3), (short)50, (short)300);
     objects[2].setProperties(OBJ_ROCKET, (short)60, (short)250, (byte)((enemySpeed >> 2) & 7), (short)50, (short)725);
@@ -1133,17 +1139,17 @@ void loadLevel4(){
   zeroLevel(16, 12, levelData, nonRedColours, arrowPos[0]);
   goalCount = 28;
   endPoint = 2;
-  placeHoriz(1, 6, 6, BG_GROUND, 16, 12, levelData);
-  placeHoriz(9, 6, 6, BG_GROUND, 16, 12, levelData);
-  placeRect(1, 4, 14, 2, BG_COIN, 16, 12, levelData);
-  placeTile(2, 7, BG_PILLAR, 16, 12, levelData);
-  placeTile(4, 7, BG_PILLAR, 16, 12, levelData);
-  placeTile(6, 7, BG_PILLAR, 16, 12, levelData);
-  placeTile(9, 7, BG_PILLAR, 16, 12, levelData);
-  placeTile(11, 7, BG_PILLAR, 16, 12, levelData);
-  placeTile(13, 7, BG_PILLAR, 16, 12, levelData);
-  placeTile(4, 3, BG_VENT, 16, 12, levelData);
-  placeTile(10, 3, BG_VENT, 16, 12, levelData);
+  placeHoriz(1, 6, 6, BG_GROUND, levelData);
+  placeHoriz(9, 6, 6, BG_GROUND, levelData);
+  placeRect(1, 4, 14, 2, BG_COIN, levelData);
+  placeTile(2, 7, BG_PILLAR, levelData);
+  placeTile(4, 7, BG_PILLAR, levelData);
+  placeTile(6, 7, BG_PILLAR, levelData);
+  placeTile(9, 7, BG_PILLAR, levelData);
+  placeTile(11, 7, BG_PILLAR, levelData);
+  placeTile(13, 7, BG_PILLAR, levelData);
+  placeTile(4, 3, BG_VENT, levelData);
+  placeTile(10, 3, BG_VENT, levelData);
   objects[0].setProperties(OBJ_PLAT_VERT, (short)350, (short)400, (byte)-2, (short)300, (short)575);
   objects[1].setProperties(OBJ_PLAT_VERT, (short)400, (short)400, (byte)-2, (short)300, (short)575);
   for(byte i = 2; i < 7; i++)
@@ -1157,20 +1163,20 @@ void loadLevel5(byte enemySpeed){
   zeroLevel(16, 12, levelData, nonRedColours, arrowPos[0]);
   goalCount = 9;
   endPoint = 4;
-  placeTile(1, 10, BG_GROUND, 16, 12, levelData);
-  placeTile(12, 4, BG_GROUND, 16, 12, levelData);
-  placeHoriz(12, 10, 3, BG_GROUND, 16, 12, levelData);
-  placeHoriz(13, 9, 2, BG_GROUND, 16, 12, levelData);
-  placeHoriz(7, 6, 3, BG_GROUND, 16, 12, levelData);
-  placeTile(8, 5, BG_EXIT, 16, 12, levelData);
-  placeTile(7, 7, BG_PILLAR, 16, 12, levelData);
-  placeTile(9, 7, BG_PILLAR, 16, 12, levelData);
-  placeTile(12, 5, BG_PILLAR, 16, 12, levelData);
-  placeTile(4, 2, BG_VENT, 16, 12, levelData);
-  placeTile(8, 2, BG_VENT, 16, 12, levelData);
-  placeTile(12, 2, BG_VENT, 16, 12, levelData);
-  placeHoriz(1, 5, 6, BG_COIN, 16, 12, levelData);
-  placeVert(1, 7, 3, BG_COIN, 16, 12, levelData);
+  placeTile(1, 10, BG_GROUND, levelData);
+  placeTile(12, 4, BG_GROUND, levelData);
+  placeHoriz(12, 10, 3, BG_GROUND, levelData);
+  placeHoriz(13, 9, 2, BG_GROUND, levelData);
+  placeHoriz(7, 6, 3, BG_GROUND, levelData);
+  placeTile(8, 5, BG_EXIT, levelData);
+  placeTile(7, 7, BG_PILLAR, levelData);
+  placeTile(9, 7, BG_PILLAR, levelData);
+  placeTile(12, 5, BG_PILLAR, levelData);
+  placeTile(4, 2, BG_VENT, levelData);
+  placeTile(8, 2, BG_VENT, levelData);
+  placeTile(12, 2, BG_VENT, levelData);
+  placeHoriz(1, 5, 6, BG_COIN, levelData);
+  placeVert(1, 7, 3, BG_COIN, levelData);
   objects[0].setProperties(OBJ_ROCKET, (short)150,(short)450, (byte)((enemySpeed >> 2) & 7), (short)50, (short)275);
   objects[1].setProperties(OBJ_ROCKET, (short)550,(short)200, (byte)(-(((enemySpeed) >> 2) & 7)), (short)350, (short)575);
   objects[2].setProperties(OBJ_PLAT_HORIZ, (short)200, (short)300, (byte)2, (short)50, (short)350);
@@ -1189,18 +1195,18 @@ void loadLevel6(){
   bonus[7] = '0';
   bonus[8] = '0';
   time[6] = time[7] = time[8] = '9';
-  placeHoriz(1, 5, 4, BG_GROUND, 16, 12, levelData);
-  placeHoriz(2, 5, 2, BG_PILLAR, 16, 12, levelData);
-  placeVert(0, 5, 2, BG_GROUND, 16, 12, levelData);
-  placeVert(5, 5, 2, BG_GROUND, 16, 12, levelData);
-  placeHoriz(1, 4, 4, BG_GROUND, 16, 12, levelData);
-  placeHoriz(2, 3, 2, BG_GROUND, 16, 12, levelData);
-  placeVert(6, 6, 2, BG_GROUND, 16, 12, levelData);
-  placeHoriz(10, 8, 3, BG_GROUND, 16, 12, levelData);
-  placeTile(11, 8, BG_PILLAR, 16, 12, levelData);
-  placeTile(11, 7, BG_GROUND, 16, 12, levelData);
-  objects[0].setProperties((byte)-1, (short)800, (short)525, (byte)-2, (short)-150, (short)825);
-  objects[1].setProperties((byte)-1, (short)800, (short)500, (byte)-2, (short)-150, (short)825);
+  placeHoriz(1, 5, 4, BG_GROUND, levelData);
+  placeHoriz(2, 5, 2, BG_PILLAR, levelData);
+  placeVert(0, 5, 2, BG_GROUND, levelData);
+  placeVert(5, 5, 2, BG_GROUND, levelData);
+  placeHoriz(1, 4, 4, BG_GROUND, levelData);
+  placeHoriz(2, 3, 2, BG_GROUND, levelData);
+  placeVert(6, 6, 2, BG_GROUND, levelData);
+  placeHoriz(10, 8, 3, BG_GROUND, levelData);
+  placeTile(11, 8, BG_PILLAR, levelData);
+  placeTile(11, 7, BG_GROUND, levelData);
+  objects[0].setProperties(OBJ_NONE, WIDTH, (short)525, (byte)-2, (short)-150, (short)825);
+  objects[1].setProperties(OBJ_NONE, WIDTH, (short)500, (byte)-2, (short)-150, (short)825);
   for(byte i = 2; i < 7; i++)
     objects[i].setProperties();
 }
@@ -1212,49 +1218,49 @@ void loadLevel7(byte speed){
   zeroLevel(16, 12, levelData, nonRedColours, arrowPos[0]);
   goalCount = 12;
   endPoint = 5;
-  placeTile(7, 10, BG_GROUND, 16, 12, levelData);
-  placeTile(8, 10, BG_GROUND, 16, 12, levelData);
-  placeTile(8, 9, BG_GROUND, 16, 12, levelData);
-  placeTile(9, 9, BG_COIN, 16, 12, levelData);
-  placeTile(9, 10, BG_COIN, 16, 12, levelData);
-  placeTile(10, 10, BG_GROUND, 16, 12, levelData);
-  placeTile(11, 10, BG_GROUND, 16, 12, levelData);
-  placeTile(11, 9, BG_GROUND, 16, 12, levelData);
-  placeTile(11, 8, BG_COIN, 16, 12, levelData);
-  placeTile(12, 8, BG_COIN, 16, 12, levelData);
-  placeTile(12, 9, BG_GROUND, 16, 12, levelData);
-  placeTile(13, 9, BG_GROUND, 16, 12, levelData);
-  placeTile(12, 10, BG_COIN, 16, 12, levelData);
-  placeTile(13, 10, BG_COIN, 16, 12, levelData);
-  placeTile(11, 6, BG_GROUND, 16, 12, levelData);
-  placeTile(12, 6, BG_GROUND, 16, 12, levelData);
-  placeTile(11, 7, BG_PILLAR, 16, 12, levelData);
-  placeTile(12, 7, BG_PILLAR, 16, 12, levelData);
-  placeTile(8, 6, BG_GROUND, 16, 12, levelData);
-  placeTile(9, 6, BG_GROUND, 16, 12, levelData);
-  placeTile(8, 7, BG_PILLAR, 16, 12, levelData);
-  placeTile(9, 7, BG_PILLAR, 16, 12, levelData);
-  placeTile(8, 5, BG_COIN, 16, 12, levelData);
-  placeTile(9, 5, BG_COIN, 16, 12, levelData);
-  placeTile(4, 8, BG_PILLAR, 16, 12, levelData);
-  placeTile(5, 8, BG_PILLAR, 16, 12, levelData);
-  placeTile(6, 6, BG_COIN, 16, 12, levelData);
-  placeTile(4, 7, BG_GROUND, 16, 12, levelData);
-  placeTile(5, 7, BG_GROUND, 16, 12, levelData);
-  placeTile(1, 4, BG_GROUND, 16, 12, levelData);
-  placeTile(1, 5, BG_PILLAR, 16, 12, levelData);
-  placeTile(1, 3, BG_COIN, 16, 12, levelData);
-  placeHoriz(6, 3, 4, BG_GROUND, 16, 12, levelData);
-  placeTile(6, 4, BG_PILLAR, 16, 12, levelData);
-  placeTile(9, 4, BG_PILLAR, 16, 12, levelData);
-  placeTile(8, 2, BG_COIN, 16, 12, levelData);
-  placeTile(9, 2, BG_COIN, 16, 12, levelData);
-  placeHoriz(11, 3, 4, BG_GROUND, 16, 12, levelData);
-  placeTile(14, 2, BG_EXIT, 16, 12, levelData);
-  placeTile(11, 4, BG_PILLAR, 16, 12, levelData);
-  placeTile(13, 4, BG_PILLAR, 16, 12, levelData);
-  placeTile(3, 2, BG_VENT, 16, 12, levelData);
-  placeTile(12, 1, BG_VENT, 16, 12, levelData);
+  placeTile(7, 10, BG_GROUND, levelData);
+  placeTile(8, 10, BG_GROUND, levelData);
+  placeTile(8, 9, BG_GROUND, levelData);
+  placeTile(9, 9, BG_COIN, levelData);
+  placeTile(9, 10, BG_COIN, levelData);
+  placeTile(10, 10, BG_GROUND, levelData);
+  placeTile(11, 10, BG_GROUND, levelData);
+  placeTile(11, 9, BG_GROUND, levelData);
+  placeTile(11, 8, BG_COIN, levelData);
+  placeTile(12, 8, BG_COIN, levelData);
+  placeTile(12, 9, BG_GROUND, levelData);
+  placeTile(13, 9, BG_GROUND, levelData);
+  placeTile(12, 10, BG_COIN, levelData);
+  placeTile(13, 10, BG_COIN, levelData);
+  placeTile(11, 6, BG_GROUND, levelData);
+  placeTile(12, 6, BG_GROUND, levelData);
+  placeTile(11, 7, BG_PILLAR, levelData);
+  placeTile(12, 7, BG_PILLAR, levelData);
+  placeTile(8, 6, BG_GROUND, levelData);
+  placeTile(9, 6, BG_GROUND, levelData);
+  placeTile(8, 7, BG_PILLAR, levelData);
+  placeTile(9, 7, BG_PILLAR, levelData);
+  placeTile(8, 5, BG_COIN, levelData);
+  placeTile(9, 5, BG_COIN, levelData);
+  placeTile(4, 8, BG_PILLAR, levelData);
+  placeTile(5, 8, BG_PILLAR, levelData);
+  placeTile(6, 6, BG_COIN, levelData);
+  placeTile(4, 7, BG_GROUND, levelData);
+  placeTile(5, 7, BG_GROUND, levelData);
+  placeTile(1, 4, BG_GROUND, levelData);
+  placeTile(1, 5, BG_PILLAR, levelData);
+  placeTile(1, 3, BG_COIN, levelData);
+  placeHoriz(6, 3, 4, BG_GROUND, levelData);
+  placeTile(6, 4, BG_PILLAR, levelData);
+  placeTile(9, 4, BG_PILLAR, levelData);
+  placeTile(8, 2, BG_COIN, levelData);
+  placeTile(9, 2, BG_COIN, levelData);
+  placeHoriz(11, 3, 4, BG_GROUND, levelData);
+  placeTile(14, 2, BG_EXIT, levelData);
+  placeTile(11, 4, BG_PILLAR, levelData);
+  placeTile(13, 4, BG_PILLAR, levelData);
+  placeTile(3, 2, BG_VENT, levelData);
+  placeTile(12, 1, BG_VENT, levelData);
   objects[0].setProperties(OBJ_ROBOT, (short)650, (short)425, (byte)((~(speed & 3))+1), (short)550, (short)700);
   objects[1].setProperties(OBJ_ROBOT, (short)350, (short)125, (byte)(speed & 3), (short)300, (short)500);
   objects[2].setProperties(OBJ_ROCKET, (short)300, (short)250, (byte)((speed >> 2) & 7), (short)100, (short)525);
@@ -1316,7 +1322,7 @@ void initPauseSound(){
 void zeroLevel(int sizeX, int sizeY, byte[][] back, byte[] gb, byte arrowPoses){
   for(int i = 0; i < sizeX; i++){
     for(int j = 0; j < sizeY; j++){
-      back[i][j]&=(byte)(-8);
+      back[i][j]&=BG_NONE;
     }
   }
   switch(arrowPoses & 16){
@@ -1324,17 +1330,17 @@ void zeroLevel(int sizeX, int sizeY, byte[][] back, byte[] gb, byte arrowPoses){
       gb[0]= (byte)(-92);
       gb[1] = (byte)(-24);
       for(int i = 0; i < sizeX; i++)
-        back[i][sizeY-1] = -8|BG_GROUND;
+        back[i][sizeY-1] = BG_NONE|BG_GROUND;
       break;
     default:
       gb[0]= gb[1] = 0;
      for(int i = 0; i < 16; i++){
-       levelData[i][0] = -8|BG_GROUND;
-       levelData[i][11] = -8|BG_GROUND;
+       levelData[i][0] = BG_NONE|BG_GROUND;
+       levelData[i][11] = BG_NONE|BG_GROUND;
      }
      for(int i = 1; i < 11; i++){
-       levelData[0][i] = -8|BG_GROUND;
-       levelData[15][i] = -8|BG_GROUND;
+       levelData[0][i] = BG_NONE|BG_GROUND;
+       levelData[15][i] = BG_NONE|BG_GROUND;
      }
      break;
   }
@@ -1342,60 +1348,69 @@ void zeroLevel(int sizeX, int sizeY, byte[][] back, byte[] gb, byte arrowPoses){
 }
 
 //Functions for assigning background tiles their IDs
-void placeTile(int xPos, int yPos, int type, int sizeX, int sizeY, byte[][] back){
+void placeTile(int xPos, int yPos, int type, byte[][] back){
   if(xPos < 0)
     xPos = 0;
-   else if(xPos >= sizeX)
-     xPos = sizeX-1;
+   else if(xPos >= SCREEN_WIDTH_TILES)
+     xPos = SCREEN_WIDTH_TILES-1;
    if(yPos < 0)
     yPos = 0;
-   else if(yPos >= sizeY)
-     yPos = sizeY-1;
+   else if(yPos >= SCREEN_HEIGHT_TILES)
+     yPos = SCREEN_HEIGHT_TILES-1;
    back[xPos][yPos] = (byte)(type+(((type & 2) == 2) ? 0 : -8));
 }
 
-void placeHoriz(int startIndex, int yIndex, int size, int type, int sizeX, int sizeY, byte[][] back){
-  if(size > sizeX)
-    size = sizeX;
+void placeHoriz(int startIndex, int yIndex, int size, int type, byte[][] back){
+  if(size > SCREEN_WIDTH_TILES)
+    size = SCREEN_WIDTH_TILES;
    else if(size < 1)
      size = 1;
-   if(yIndex >= sizeY)
-     yIndex = sizeY-1;
+   if(yIndex >= SCREEN_HEIGHT_TILES)
+     yIndex = SCREEN_HEIGHT_TILES-1;
    else if(yIndex < 0)
      yIndex = 0;
-   for(int i = 0; i < size; i++){
-       if(i >= 0 && i+startIndex < sizeX)
-         back[i+startIndex][yIndex] = (byte)(type+(((type & 2) == 2) ? 0 : -8));
+   //Clamping the start index and the size of the row
+   int i = (startIndex >= 0) ? 0 : -startIndex;
+   if((startIndex+size) >= SCREEN_WIDTH_TILES)
+     size = (startIndex+size-SCREEN_WIDTH_TILES);
+     
+   for(; i < size; i++){
+     back[i+startIndex][yIndex] = (byte)(type+(((type & 2) == 2) ? 0 : BG_NONE));
    }
 }
 
-void placeVert(int xIndex, int startIndex, int size, int type, int sizeX, int sizeY, byte[][] back){
-  if(size > sizeY)
-    size = sizeY;
+void placeVert(int xIndex, int startIndex, int size, int type, byte[][] back){
+  if(size > SCREEN_HEIGHT_TILES)
+    size = SCREEN_HEIGHT_TILES;
    else if(size < 1)
      size = 1;
-   if(xIndex >= sizeX)
-     xIndex = sizeX-1;
+   if(xIndex >= SCREEN_WIDTH_TILES)
+     xIndex = SCREEN_WIDTH_TILES-1;
    else if(xIndex < 0)
      xIndex = 0;
-   for(int i = 0; i < size; i++){
-       if(i >= 0 && i+startIndex < sizeY)
-         back[xIndex][i+startIndex] = (byte)(type+(((type & 2) == 2) ? 0 : -8));
+   
+   //Clamping the start index and the size of the column
+   int i = (startIndex >= 0) ? 0 : -startIndex;
+   if((startIndex+size) >= SCREEN_HEIGHT_TILES)
+     size = (startIndex+size-SCREEN_HEIGHT_TILES);
+     
+   for(; i < size; i++){
+     back[xIndex][i+startIndex] = (byte)(type+(((type & 2) == 2) ? 0 : -8));
    }
 }
 
-void placeRect(int startX, int startY, int wid, int heigh, int type, int sizeX, int sizeY, byte[][] back){
-  if(wid >= sizeX)
-    wid = sizeX-1;
+void placeRect(int startX, int startY, int wid, int heigh, int type, byte[][] back){
+  if(wid >= SCREEN_WIDTH_TILES)
+    wid = SCREEN_WIDTH_TILES-1;
    else if(wid < 1)
      wid = 1;
-   if(heigh >= sizeY)
-    heigh = sizeY-1;
+   if(heigh >= SCREEN_HEIGHT_TILES)
+    heigh = SCREEN_HEIGHT_TILES-1;
    else if(heigh < 1)
      heigh = 1;  
    for(int i = 0; i < wid; i++){
      for(int j = 0; j < heigh; j++){
-       if(i >= 0 && i+startX < sizeX && j >= 0 && j+startY < sizeY)
+       if(i >= 0 && i+startX < SCREEN_WIDTH_TILES && j >= 0 && j+startY < SCREEN_HEIGHT_TILES)
          back[i+startX][j+startY] = (byte)(type+(((type & 2) == 2) ? 0 : -8));
      }
    }
@@ -1414,16 +1429,16 @@ boolean isTooBig(char[] text, byte size, int startPos, int maxSize){
 }
 
 //Handles interactions between objects and the level background (REPLACE ALL RECT CALLS FOR CALLS TO ACTUAL GRAPHICS AND DELETE ALL STROKES AND FILLS WHEN DONE)
-void drawBack(byte frameCounter, Player currPlayer, TextMod mod, byte[][] background, int backWidth, int backHeight,  byte[] coinCount, byte goalCount, char[] text, byte[] arrowPosition, SqrOsc sqr, short[][] soundDur, short[][] freqs, byte[] soundP, byte[] soundTimers){
+void drawBack(byte frameCounter, Player currPlayer, TextMod mod, byte[][] background, byte[] coinCount, byte goalCount, char[] text, byte[] arrowPosition, SqrOsc sqr, short[][] soundDur, short[][] freqs, byte[] soundP, byte[] soundTimers){
   currPlayer.setState((byte)((currPlayer.returnState() & -29))); 
   int tileX = 0;
   int tileY = 0;
   byte fifteen = (byte)((frameCounter >> (((frameCounter & 2) >> 1) & 2)) & 15);
   
-  for(int i = 0; i < backWidth; i++){
-    tileX = 50*i;
-    for(int j = 0; j < backHeight; j++){
-      tileY = 50*j;
+  for(int i = 0; i < SCREEN_WIDTH_TILES; i++){
+    tileX = TILE_SIZE*i;
+    for(int j = 0; j < SCREEN_HEIGHT_TILES; j++){
+      tileY = TILE_SIZE*j;
       switch((background[i][j] & 7)){
         case BG_GROUND:
            if(currPlayer.returnY()+25 > tileY && currPlayer.returnY()+25 < tileY+50){
@@ -1543,13 +1558,13 @@ void drawBack(byte frameCounter, Player currPlayer, TextMod mod, byte[][] backgr
   currPlayer.setState((byte)(currPlayer.returnState() & -3));
 }
 
-void drawGround(byte[][] background, int backWidth, int backHeight){
+void drawGround(byte[][] background){
   int tileX = 0;
   int tileY = 0;
-  for(int i = 0; i < backWidth; i++){
-    tileX = i*50;
-    for(int j = 0; j < backHeight; j++){
-      tileY = j*50;
+  for(int i = 0; i < SCREEN_WIDTH_TILES; i++){
+    tileX = i*TILE_SIZE;
+    for(int j = 0; j < SCREEN_HEIGHT_TILES; j++){
+      tileY = j*TILE_SIZE;
       if((background[i][j] & 7) == BG_GROUND)
         characters[groundRef].draw(tileX, tileY, 50, 50);
     }
@@ -1575,6 +1590,42 @@ PImage setImage(byte wid, byte heig, short red, short green, short blue){
     graphic.pixels[i] = 0xFF000000|(red << 16)|(green << 8)|blue;
   graphic.updatePixels();
   return graphic;
+}
+
+void initializeGame(){
+  red = 0;
+  lives[8] = '3';
+  oneUpFlash&=-64;
+  for(byte i = 5; i < 12; i++)
+    score[i] = '0';
+  stageStart[7] = '1';
+  soundSize&=63;
+  for(byte i = 8; i < stageStart.length; i++)
+    stageStart[i] = 0;
+  coinCounter[0] = 0;
+  sqr.stop();
+  saw.stop();
+  attractMode = 0;
+  secondScore = 0;
+  arrowPos[0]&=-128;
+  for(byte i = 0; i < BONUS_TEXT_LENGTH; i++)
+    bonusText[i] = 0;
+  currPlayer.setXSpeed((byte)(0));
+  currPlayer.setYSpeed((byte)(0));
+  currPlayer.setState((byte)(0));
+  currPlayer.setY((short)(500));
+  if((isSmoothed & 4) == 0){
+    levelCount = 0;
+    currPlayer.setX(-150);
+    loadLevel0();
+    gameOverTime = -512;
+  }
+  else{
+    levelCount = 1;
+    currPlayer.setX((short)100);
+    loadLevel1(enSpeed);
+    gameOverTime = 256;
+  } 
 }
 
 /*
