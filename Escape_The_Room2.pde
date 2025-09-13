@@ -26,8 +26,7 @@ final byte BG_COIN = 2;
 final byte BG_EXIT = 3;
 final byte BG_PILLAR = 4;
 final byte BG_VENT = 5;
-final byte BG_SCORE = 6;
-final byte BG_TELE = 7;
+final byte BG_TELE = 6;
 
 //IDs for moving objects
 final byte OBJ_NONE = -1;
@@ -44,29 +43,47 @@ final byte INSIDE_PILLAR_TOP = 59;
 final byte INSIDE_PILLAR_STEM = 60;
 final byte OUTSIDE_GROUND = 65;
 final byte OUTSIDE_PILLAR_STEM = 66;
+final byte COIN_FRAME_ONE = 5;
+final byte COIN_SCORE = 42;
 
-final byte BONUS_TEXT_LENGTH = 6; //index 0
-final byte CURR_SCORE_TEXT_LENGTH = 12; // index 1
-final byte HIGH_SCORE_TEXT_LENGTH = 11; //index 2
-final byte LIVES_TEXT_LENGTH = 9; //index 3
-final byte SCORE_BONUS_TEXT_LENGTH = 12; //index 4
-final byte TIME_REMAIN_TEXT_LENGTH = 9; //index 5
-final byte READY_TEXT_LENGTH = 6; //index 7
-final byte GAME_OVER_TEXT_LENGTH = 9; //index 8
-final byte MENU_TEXT_LENGTH = 13; //indices 9-11
-final byte ENTER_TEXT_LENGTH = 11; //index 12
-final byte CUTSCENE_TEXT_LENGTH = 16; //index 13
-final byte PAUSE_TEXT_LENGTH = 5; //indx 14
-final byte QUESTION_MARK_TEXT_LENGTH = 1; //index 15
+final byte BONUS_TEXT_LENGTH = 6;
+final byte CURR_SCORE_TEXT_LENGTH = 12;
+final byte HIGH_SCORE_TEXT_LENGTH = 11;
+final byte LIVES_TEXT_LENGTH = 9;
+final byte SCORE_BONUS_TEXT_LENGTH = 12;
+final byte TIME_REMAIN_TEXT_LENGTH = 9;
+final byte HUD_TEXT_SIZE = 8;
+final byte HUD_TEXT_PADDING = HUD_TEXT_SIZE+3;
+final short HUD_TEXT_POS = 55;
 
-final byte ROUND_START_TEXT_LENGTH_LONG = 12; //index 6
-final byte ROUND_START_TEXT_LENGTH_SHORT = 8; //index 6
+final byte READY_TEXT_LENGTH = 6;
+final byte GAME_OVER_TEXT_LENGTH = 9;
+
+final byte MENU_TEXT_LENGTH = 13;
+final byte MENU_TEXT_SIZE = 24;
+final short MENU_X_POS = 256;
+final short MENU_Y_POS = 375;
+
+final byte ENTER_TEXT_LENGTH = 11;
+final short ENTER_X_POS = 268;
+final short ENTER_Y_POS = 500;
+
+final byte CUTSCENE_TEXT_LENGTH = 16;
+final byte PAUSE_TEXT_LENGTH = 5;
+final short PAUSE_X_POS = 340;
+final short PAUSE_Y_POS = 250;
+
+final byte QUESTION_MARK_TEXT_LENGTH = 1;
+
+final byte ROUND_START_TEXT_LENGTH_LONG = 12;
+final byte ROUND_START_TEXT_LENGTH_SHORT = 8;
 final byte ROUND_START_TEXT_SIZE = 32;
 
 final byte MODE_GAME_A = 0;
 final byte MODE_GAME_B = 1;
 final byte MODE_RESET_SCORE = 2;
 final byte MODE_EXIT = 3;
+
 
 final short WIDTH = 800;
 final short HEIGHT = 600;
@@ -109,6 +126,8 @@ SqrOsc sqr = new SqrOsc(this);
 TextMod wrapper = new TextMod();
 NonPlayerEnt[] objects = new NonPlayerEnt[7];
 Player currPlayer = new Player();
+LinkedList<CoinScoreText> scoreQueue = new LinkedList<CoinScoreText>();
+CoinScoreText tempScoreText;
 
 
 
@@ -122,6 +141,8 @@ Bit 1 of arrowPos contains the side the arrow appear on
 8 contains if sound is on or off
 */
 
+boolean verticalKeysHeld = false;
+
 int endPoint = 7;
 byte frameCounter = 0;
 byte levelCount = 0;
@@ -133,7 +154,10 @@ byte enSpeed = 14;
 byte soundSize = 25;
 byte compNum = 0;
 byte isSmoothed = 1;
-short titleTime = 0;
+byte mode = 0;
+byte coinFrame = 0;
+
+short titleTime = 0; //2048 seems to be a key lock for up and down; bits 9 and 10 seem to be used for the mode
 short secondScore = 0;
 short randomNum = 30242;
 short gameOverTime = 201;
@@ -151,26 +175,7 @@ short[][] soundDurations = {{0, 0, 0, 0, 0, 0}, {0, 0, 0, 0, 0, 0}};
 short[][] frequencies = {{0, 0 , 0, 0 ,0 ,0}, {0, 0, 0, 0, 0, 0}};
 
 
-/*
-6 will not use the increment function because levels only exist in the single digits
-7 and 8 will use the '>' character, with it being traded between them
-0 = "BONUS!"
-1 = "0000000"
-2 = "HI: 0000000"
-3 = "LIVES: 00"
-4 = "BONUS: 00000"
-5 = "TIME: 000"
-6 = "ROUND: 0 NULL NULL NULL NULL"
-7 = "READY?"
-8 = "GAME OVER"
-9 = " GAME A"
-10 = " GAME B"
-11 = " DELETE SCORE"
-12 = "PRESS ENTER"
-13 = Cutscene text
-14 = "PAUSE"
-15 = "?"
-*/
+//gameText features a greater than symbol that is used as an arrow to point to the current menu option
 char[] score = {RED_ONE, RED_U, RED_P, RED_COLON, ' ', '0', '0', '0', '0', '0', '0', '0', '9', '9', '9', '9' , '9', '7', '5'};
 char[] highScore = {'H','I', ':', ' ', '0', '0', '0', '0', '0', '0', '0', 0};
 char[] highComp = {'0', '0', '0', '0', '0', '0', '0', 0};
@@ -307,19 +312,19 @@ void setup(){
   sqr.amp(vol);
   characters[0] = new Graphics(setImage((byte)8, (byte)8, (short)255, (short)174, (short)201), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
   characters[1] = new Graphics(loadImage(PATH+"Text/White/!"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  characters[2] = new Graphics(loadImage(PATH+"Text/Red/1"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  characters[3] = new Graphics(loadImage(PATH+"Text/Red/U"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  characters[4] = new Graphics(loadImage(PATH+"Text/Red/P"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters[RED_ONE] = new Graphics(loadImage(PATH+"Text/Red/1"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters[RED_U] = new Graphics(loadImage(PATH+"Text/Red/U"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters[RED_P] = new Graphics(loadImage(PATH+"Text/Red/P"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
   for(int i = 0; i < 3; i++)
-    characters[i+5] = new Graphics(loadImage(PATH+"Background/coin"+char(i+49)+EXTEND), MIN_KEY, MAX_KEY, false, (isSmoothed & 1) == 1);
+    characters[i+COIN_FRAME_ONE] = new Graphics(loadImage(PATH+"Background/coin"+char(i+49)+EXTEND), MIN_KEY, MAX_KEY, false, (isSmoothed & 1) == 1);
   characters[8] = new Graphics(loadImage(PATH+"Text/White/openParen"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
   characters[9] = new Graphics(loadImage(PATH+"Text/White/closeParen"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
   characters[10] = characters[0];
   characters[11] = characters[0];
   characters[12] = new Graphics(loadImage(PATH+"Menu/sound1"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  characters[13] = new Graphics(loadImage(PATH+"Text/White/minus"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters['-'] = new Graphics(loadImage(PATH+"Text/White/minus"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
   characters[14] = new Graphics(loadImage(PATH+"Menu/sound-1"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  characters[15] = new Graphics(loadImage(PATH+"Text/Red/colon"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters[RED_COLON] = new Graphics(loadImage(PATH+"Text/Red/colon"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
   for(int i = 0; i < 10; i++)
     characters[i+16] = new Graphics(loadImage(PATH+"Text/White/"+char(i+48)+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
   characters[26] = new Graphics(loadImage(PATH+"Text/White/colon"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
@@ -328,7 +333,7 @@ void setup(){
   characters[29] = new Graphics(loadImage(PATH+"Objects/platform"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
   characters[30] = new Graphics(loadImage(PATH+"Text/White/greater"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
   characters[31] = new Graphics(loadImage(PATH+"Text/White/question"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  characters[32] = new Graphics(loadImage(PATH+"Background/ground"+EXTEND), MIN_KEY, MAX_KEY, false, (isSmoothed & 1) == 1);
+  characters[INSIDE_GROUND] = new Graphics(loadImage(PATH+"Background/ground"+EXTEND), MIN_KEY, MAX_KEY, false, (isSmoothed & 1) == 1);
   characters[33] = new Graphics(loadImage(PATH+"Text/White/A"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
   characters[34] = new Graphics(loadImage(PATH+"Text/White/B"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
   characters[35] = new Graphics(loadImage(PATH+"Text/White/C"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
@@ -338,7 +343,7 @@ void setup(){
   characters[39] = new Graphics(loadImage(PATH+"Text/White/G"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
   characters[40] = new Graphics(loadImage(PATH+"Text/White/H"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
   characters[41] = new Graphics(loadImage(PATH+"Text/White/I"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  characters[42] = new Graphics(loadImage(PATH+"Background/points"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters[COIN_SCORE] = new Graphics(loadImage(PATH+"Background/points"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
   characters[43] = new Graphics(loadImage(PATH+"Text/White/K"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
   characters[44] = new Graphics(loadImage(PATH+"Text/White/L"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
   characters[45] = new Graphics(loadImage(PATH+"Text/White/M"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
@@ -355,14 +360,14 @@ void setup(){
   characters[56] = new Graphics(loadImage(PATH+"Objects/plus1"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
   characters[57] = new Graphics(loadImage(PATH+"Text/White/Y"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
   characters[58] = new Graphics(loadImage(PATH+"Text/White/Z"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  characters[59] = new Graphics(loadImage(PATH+"Background/support1"+EXTEND), MIN_KEY, MAX_KEY, false, (isSmoothed & 1) == 1);
-  characters[60] = new Graphics(loadImage(PATH+"Background/support2"+EXTEND), MIN_KEY, MAX_KEY, false, (isSmoothed & 1) == 1);
+  characters[INSIDE_PILLAR_TOP] = new Graphics(loadImage(PATH+"Background/support1"+EXTEND), MIN_KEY, MAX_KEY, false, (isSmoothed & 1) == 1);
+  characters[INSIDE_PILLAR_STEM] = new Graphics(loadImage(PATH+"Background/support2"+EXTEND), MIN_KEY, MAX_KEY, false, (isSmoothed & 1) == 1);
   characters[61] = new Graphics(loadImage(PATH+"Background/vent11"+EXTEND), MIN_KEY, MAX_KEY, false, (isSmoothed & 1) == 1);
   characters[62] = new Graphics(loadImage(PATH+"Background/vent1-1"+EXTEND), MIN_KEY, MAX_KEY, false, (isSmoothed & 1) == 1);
   characters[63] = new Graphics(loadImage(PATH+"Background/vent-11"+EXTEND), MIN_KEY, MAX_KEY, false, (isSmoothed & 1) == 1);
   characters[64] = new Graphics(loadImage(PATH+"Background/vent-1-1"+EXTEND), MIN_KEY, MAX_KEY, false, (isSmoothed & 1) == 1);
-  characters[65] = new Graphics(loadImage(PATH+"Background/grass"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  characters[66] = new Graphics(loadImage(PATH+"Background/bark"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters[OUTSIDE_GROUND] = new Graphics(loadImage(PATH+"Background/grass"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters[OUTSIDE_PILLAR_STEM] = new Graphics(loadImage(PATH+"Background/bark"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
   
   for(int i = 0; i < 3; i++)
     playerFrames[i] = new Graphics(loadImage(PATH+"Objects/P"+char(i+49)+"1"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
@@ -523,12 +528,13 @@ void draw(){
          gameOverTime&=-257;
        }
        if((arrowPos[0] & 16) == 0){
-         textDraw(score, CURR_SCORE_TEXT_LENGTH, (short)55, (short)55, (byte)8);
+         textDraw(score, CURR_SCORE_TEXT_LENGTH, HUD_TEXT_POS, HUD_TEXT_POS, HUD_TEXT_SIZE);
+         textDraw(lives, LIVES_TEXT_LENGTH, HUD_TEXT_POS, (short)(HUD_TEXT_POS+HUD_TEXT_PADDING), HUD_TEXT_SIZE);
+         textDraw(highScore, HIGH_SCORE_TEXT_LENGTH, HUD_TEXT_POS, (short)(HUD_TEXT_POS+HUD_TEXT_PADDING*2), HUD_TEXT_SIZE);
+         textDraw(bonus, SCORE_BONUS_TEXT_LENGTH, HUD_TEXT_POS, (short)(HUD_TEXT_POS+HUD_TEXT_PADDING*3), HUD_TEXT_SIZE);
+         textDraw(time, TIME_REMAIN_TEXT_LENGTH, HUD_TEXT_POS, (short)(HUD_TEXT_POS+HUD_TEXT_PADDING*4), HUD_TEXT_SIZE);
+         
          textDraw(bonusText, BONUS_TEXT_LENGTH, (short)256, (short)248, (byte)48);
-         textDraw(lives, LIVES_TEXT_LENGTH, (short)55, (short)66, (byte)8);
-         textDraw(highScore, HIGH_SCORE_TEXT_LENGTH, (short)55, (short)77, (byte)8);
-         textDraw(bonus, SCORE_BONUS_TEXT_LENGTH, (short)55, (short)88, (byte)8);
-         textDraw(time, TIME_REMAIN_TEXT_LENGTH, (short)55, (short)99, (byte)8);
        }
        if((frameCounter & 64) == 0){
          if(wrapper.digitEqual(time, 6, (byte)0, (byte)3) && (arrowPos[0] & 16) == 0){
@@ -562,12 +568,18 @@ void draw(){
                break;
            }
          }
+         for(int i = 0; i < scoreQueue.size(); i++){
+           tempScoreText = scoreQueue.removeFirst();
+           tempScoreText.raise(characters[COIN_SCORE]);
+           if(!tempScoreText.shouldDelete())
+             scoreQueue.add(tempScoreText);
+         }
          currPlayer.controlPlayer(wrapper, playerFrames, keyInputs, lives, (byte)2, (byte)0, 7, saw, soundDurations[1], frequencies[1], soundPointers, soundTimers, arrowPos, time, max);
          drawGround(levelData);
           if((arrowPos[0] & 4) == 0){
             if(goalCount > 0 && coinCounter[0] >= goalCount && (gameOverTime & 255) < 127)
               gameOverTime++;
-            else if(currPlayer.returnX() > 800 || (gameOverTime & 255) >= 127)
+            else if(currPlayer.returnX() > WIDTH || (gameOverTime & 255) >= 127)
               arrowPos[0]|=8;
           }
           if((attractMode & 255) == 0 && ((((attractMode >> 9) & 255) >= 30) || (((attractMode >> 9) & 255) >= 4 && (arrowPos[0] & 16) == 16))){
@@ -704,7 +716,7 @@ void draw(){
          saw.stop();
           drawBack((byte)(frameCounter & 63), currPlayer, wrapper, levelData, coinCounter, goalCount, score, arrowPos, sqr, soundDurations, frequencies, soundPointers, soundTimers);
           if((frameCounter & 63) >= 0 && (frameCounter & 63) <= 30)
-            textDraw(pauseText, PAUSE_TEXT_LENGTH, (short)340, (short)(250), (byte)24);
+            textDraw(pauseText, PAUSE_TEXT_LENGTH, PAUSE_X_POS, PAUSE_Y_POS, MENU_TEXT_SIZE);
        }
        drawGround(levelData);
        if((attractMode & 256) == 0){
@@ -857,38 +869,28 @@ void draw(){
            currPlayer.setState((byte)(0));
            for(byte i = 0; i < BONUS_TEXT_LENGTH; i++)
              bonusText[i] = 0;
-           
-           
-           
            gameOverTime = -512;
          }
          for(byte i = 0; i < 4; i++){
-           gameText[i][0] = (i == ((titleTime >> 9) & 3)) ? '>' : ' ';
-           textDraw(gameText[i], MENU_TEXT_LENGTH, (short)256, (short)(375+25*i), (byte)24);
+           gameText[i][0] = (i == mode) ? '>' : ' ';
+           textDraw(gameText[i], MENU_TEXT_LENGTH, MENU_X_POS, (short)(MENU_Y_POS+(MENU_TEXT_SIZE+1)*i), MENU_TEXT_SIZE);
          }
          if(frameCounter >= 0 && frameCounter <= 30)
-           textDraw(enterText, ENTER_TEXT_LENGTH, (short)268, (short)500, (byte)24);
+           textDraw(enterText, ENTER_TEXT_LENGTH, ENTER_X_POS, ENTER_Y_POS, MENU_TEXT_SIZE);
          if((keyInputs & 3) != 0){
-           if((titleTime & 2048) == 0){
+           if(!verticalKeysHeld){
              if((keyInputs & 3) == 1)
-               if((titleTime & 1536) == 0)
-                 titleTime|=1536;
-               else
-                 titleTime-=512;
+               mode = (byte)((mode-1) & 3);
              else if((keyInputs & 3) == 2)
-               if((titleTime & 1536) == 1536)
-                 titleTime&=-1537;
-               else
-                 titleTime+=512;
+               mode = (byte)((mode+1) & 3);
            }
-           titleTime|=2048;
+           verticalKeysHeld = true;
          }
          else
-           titleTime&=-2049;
+           verticalKeysHeld = false;
          if((keyInputs & 32) == 32){
            if((gameOverTime & 256) == 0){
-
-             switch((titleTime >> 9) & 3){
+             switch(mode){
                case MODE_GAME_A:
                  enSpeed = 14;
                  oneUpFlash|=64;
@@ -1433,7 +1435,13 @@ void drawBack(byte frameCounter, Player currPlayer, TextMod mod, byte[][] backgr
   currPlayer.setState((byte)((currPlayer.returnState() & -29))); 
   int tileX = 0;
   int tileY = 0;
-  byte fifteen = (byte)((frameCounter >> (((frameCounter & 2) >> 1) & 2)) & 15);
+  
+  //This is used to advance the frames of the coins' animation
+  if((frameCounter & 15) == 15){
+    coinFrame++;
+    if(coinFrame > 2)
+      coinFrame = 0;
+  }
   
   for(int i = 0; i < SCREEN_WIDTH_TILES; i++){
     tileX = TILE_SIZE*i;
@@ -1473,14 +1481,11 @@ void drawBack(byte frameCounter, Player currPlayer, TextMod mod, byte[][] backgr
           } 
           break;
         case BG_COIN:
-          if(fifteen == 15)
-            background[i][j]+=8;
-          if(background[i][j] > 24)
-            background[i][j] = 2;
-          characters[((background[i][j] >> 3) & 31)+5].draw(tileX+7, tileY+7, 35, 35);
+          characters[coinFrame+COIN_FRAME_ONE].draw(tileX+7, tileY+7, 35, 35);
           if(currPlayer.returnX()+50 >= tileX+7 && currPlayer.returnX() <= tileX+35 && (currPlayer.returnState() & 1) == 0){
             if(currPlayer.returnY()+50 >= tileY+7 && currPlayer.returnY() <= tileY+35){
-              background[i][j] = 6;
+              background[i][j] = BG_NONE;
+              scoreQueue.add(new CoinScoreText(tileX+11, tileY+17));
               sqr.stop();
               soundDur[0][0] = (short)4;
               soundDur[0][1] = (short)10;
@@ -1533,21 +1538,15 @@ void drawBack(byte frameCounter, Player currPlayer, TextMod mod, byte[][] backgr
           characters[pillarRef[0]].draw(tileX, tileY); 
           for(int s = 1; (background[i][s+j] & 7) != 1; s++)
             characters[pillarRef[1]].draw(tileX, (s+j)*50); 
-
           break;
+          
         case BG_VENT:
           characters[61].draw(tileX+11, tileY+11, 14, 14);
           characters[63].draw(tileX+11, tileY+25, 14, 14);
           characters[64].draw(tileX+25, tileY+25, 14, 14);
           characters[62].draw(tileX+25, tileY+11, 14, 14);
           break;
-        case BG_SCORE:
-          characters[42].draw(tileX+11, tileY+17-((background[i][j] >> 3) & 31), 28, 20);
-          if((frameCounter & 4) == 4)
-            background[i][j]+=8;
-          if(((background[i][j] >> 3) & 31) >= 31)
-            background[i][j] = -8;
-          break;
+          
         case BG_TELE:
           if(currPlayer.returnX()+50 >= tileX+25 && currPlayer.returnX() <= tileX && currPlayer.returnY()+50 >= tileY+25 && currPlayer.returnY() <= tileY)
             arrowPos[0]|=8;
