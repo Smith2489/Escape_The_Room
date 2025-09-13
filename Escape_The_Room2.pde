@@ -12,7 +12,7 @@ final char RED_U = 35;
 final char RED_P = 36;
 final char RED_COLON = 47;
 
-
+final byte TEXT_OFFSET = 32;
 
 final byte TILE_SIZE = 50;
 
@@ -310,56 +310,56 @@ void setup(){
   fill(#000000);
   saw.amp(vol);
   sqr.amp(vol);
-  characters[0] = new Graphics(setImage((byte)8, (byte)8, (short)255, (short)174, (short)201), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  characters[1] = new Graphics(loadImage(PATH+"Text/White/!"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  characters[RED_ONE] = new Graphics(loadImage(PATH+"Text/Red/1"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  characters[RED_U] = new Graphics(loadImage(PATH+"Text/Red/U"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  characters[RED_P] = new Graphics(loadImage(PATH+"Text/Red/P"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters[' '-TEXT_OFFSET] = new Graphics(setImage((byte)8, (byte)8, (short)255, (short)174, (short)201), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters['!'-TEXT_OFFSET] = new Graphics(loadImage(PATH+"Text/White/!"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters[RED_ONE-TEXT_OFFSET] = new Graphics(loadImage(PATH+"Text/Red/1"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters[RED_U-TEXT_OFFSET] = new Graphics(loadImage(PATH+"Text/Red/U"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters[RED_P-TEXT_OFFSET] = new Graphics(loadImage(PATH+"Text/Red/P"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
   for(int i = 0; i < 3; i++)
     characters[i+COIN_FRAME_ONE] = new Graphics(loadImage(PATH+"Background/coin"+char(i+49)+EXTEND), MIN_KEY, MAX_KEY, false, (isSmoothed & 1) == 1);
-  characters[8] = new Graphics(loadImage(PATH+"Text/White/openParen"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  characters[9] = new Graphics(loadImage(PATH+"Text/White/closeParen"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters['('-TEXT_OFFSET] = new Graphics(loadImage(PATH+"Text/White/openParen"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters[')'-TEXT_OFFSET] = new Graphics(loadImage(PATH+"Text/White/closeParen"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
   characters[10] = characters[0];
   characters[11] = characters[0];
   characters[12] = new Graphics(loadImage(PATH+"Menu/sound1"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  characters['-'] = new Graphics(loadImage(PATH+"Text/White/minus"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters['-'-TEXT_OFFSET] = new Graphics(loadImage(PATH+"Text/White/minus"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
   characters[14] = new Graphics(loadImage(PATH+"Menu/sound-1"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  characters[RED_COLON] = new Graphics(loadImage(PATH+"Text/Red/colon"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters[RED_COLON-TEXT_OFFSET] = new Graphics(loadImage(PATH+"Text/Red/colon"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
   for(int i = 0; i < 10; i++)
-    characters[i+16] = new Graphics(loadImage(PATH+"Text/White/"+char(i+48)+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  characters[26] = new Graphics(loadImage(PATH+"Text/White/colon"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+    characters[i+'0'-TEXT_OFFSET] = new Graphics(loadImage(PATH+"Text/White/"+char(i+'0')+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters[':'-TEXT_OFFSET] = new Graphics(loadImage(PATH+"Text/White/colon"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
   characters[27] = new Graphics(loadImage(PATH+"Objects/1UP"+EXTEND), MIN_KEY, MAX_KEY, false, (isSmoothed & 1) == 1);
   characters[28] = new Graphics(loadImage(PATH+"Objects/enGround"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
   characters[29] = new Graphics(loadImage(PATH+"Objects/platform"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  characters[30] = new Graphics(loadImage(PATH+"Text/White/greater"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  characters[31] = new Graphics(loadImage(PATH+"Text/White/question"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters['>'-TEXT_OFFSET] = new Graphics(loadImage(PATH+"Text/White/greater"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters['?'-TEXT_OFFSET] = new Graphics(loadImage(PATH+"Text/White/question"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
   characters[INSIDE_GROUND] = new Graphics(loadImage(PATH+"Background/ground"+EXTEND), MIN_KEY, MAX_KEY, false, (isSmoothed & 1) == 1);
-  characters[33] = new Graphics(loadImage(PATH+"Text/White/A"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  characters[34] = new Graphics(loadImage(PATH+"Text/White/B"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  characters[35] = new Graphics(loadImage(PATH+"Text/White/C"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  characters[36] = new Graphics(loadImage(PATH+"Text/White/D"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  characters[37] = new Graphics(loadImage(PATH+"Text/White/E"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters['A'-TEXT_OFFSET] = new Graphics(loadImage(PATH+"Text/White/A"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters['B'-TEXT_OFFSET] = new Graphics(loadImage(PATH+"Text/White/B"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters['C'-TEXT_OFFSET] = new Graphics(loadImage(PATH+"Text/White/C"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters['D'-TEXT_OFFSET] = new Graphics(loadImage(PATH+"Text/White/D"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters['E'-TEXT_OFFSET] = new Graphics(loadImage(PATH+"Text/White/E"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
   characters[38] = new Graphics(loadImage(PATH+"Background/goalPanel"+EXTEND), MIN_KEY, MAX_KEY, false, (isSmoothed & 1) == 1);
-  characters[39] = new Graphics(loadImage(PATH+"Text/White/G"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  characters[40] = new Graphics(loadImage(PATH+"Text/White/H"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  characters[41] = new Graphics(loadImage(PATH+"Text/White/I"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters['G'-TEXT_OFFSET] = new Graphics(loadImage(PATH+"Text/White/G"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters['H'-TEXT_OFFSET] = new Graphics(loadImage(PATH+"Text/White/H"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters['I'-TEXT_OFFSET] = new Graphics(loadImage(PATH+"Text/White/I"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
   characters[COIN_SCORE] = new Graphics(loadImage(PATH+"Background/points"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  characters[43] = new Graphics(loadImage(PATH+"Text/White/K"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  characters[44] = new Graphics(loadImage(PATH+"Text/White/L"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  characters[45] = new Graphics(loadImage(PATH+"Text/White/M"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  characters[46] = new Graphics(loadImage(PATH+"Text/White/N"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  characters[47] = new Graphics(loadImage(PATH+"Text/White/O"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  characters[48] = new Graphics(loadImage(PATH+"Text/White/P"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters['K'-TEXT_OFFSET] = new Graphics(loadImage(PATH+"Text/White/K"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters['L'-TEXT_OFFSET] = new Graphics(loadImage(PATH+"Text/White/L"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters['M'-TEXT_OFFSET] = new Graphics(loadImage(PATH+"Text/White/M"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters['N'-TEXT_OFFSET] = new Graphics(loadImage(PATH+"Text/White/N"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters['O'-TEXT_OFFSET] = new Graphics(loadImage(PATH+"Text/White/O"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters['P'-TEXT_OFFSET] = new Graphics(loadImage(PATH+"Text/White/P"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
   characters[49] = new Graphics(loadImage(PATH+"Menu/title"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  characters[50] = new Graphics(loadImage(PATH+"Text/White/R"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  characters[51] = new Graphics(loadImage(PATH+"Text/White/S"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  characters[52] = new Graphics(loadImage(PATH+"Text/White/T"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  characters[53] = new Graphics(loadImage(PATH+"Text/White/U"+EXTEND),MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  characters[54] = new Graphics(loadImage(PATH+"Text/White/V"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters['R'-TEXT_OFFSET] = new Graphics(loadImage(PATH+"Text/White/R"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters['S'-TEXT_OFFSET] = new Graphics(loadImage(PATH+"Text/White/S"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters['T'-TEXT_OFFSET] = new Graphics(loadImage(PATH+"Text/White/T"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters['U'-TEXT_OFFSET] = new Graphics(loadImage(PATH+"Text/White/U"+EXTEND),MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters['V'-TEXT_OFFSET] = new Graphics(loadImage(PATH+"Text/White/V"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
   characters[55] = new Graphics(loadImage(PATH+"Background/arrow1"+EXTEND), MIN_KEY, MAX_KEY, false, (isSmoothed & 1) == 1);
   characters[56] = new Graphics(loadImage(PATH+"Objects/plus1"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  characters[57] = new Graphics(loadImage(PATH+"Text/White/Y"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
-  characters[58] = new Graphics(loadImage(PATH+"Text/White/Z"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters['Y'-TEXT_OFFSET] = new Graphics(loadImage(PATH+"Text/White/Y"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
+  characters['Z'-TEXT_OFFSET] = new Graphics(loadImage(PATH+"Text/White/Z"+EXTEND), MIN_KEY, MAX_KEY, true, (isSmoothed & 1) == 1);
   characters[INSIDE_PILLAR_TOP] = new Graphics(loadImage(PATH+"Background/support1"+EXTEND), MIN_KEY, MAX_KEY, false, (isSmoothed & 1) == 1);
   characters[INSIDE_PILLAR_STEM] = new Graphics(loadImage(PATH+"Background/support2"+EXTEND), MIN_KEY, MAX_KEY, false, (isSmoothed & 1) == 1);
   characters[61] = new Graphics(loadImage(PATH+"Background/vent11"+EXTEND), MIN_KEY, MAX_KEY, false, (isSmoothed & 1) == 1);
@@ -1293,9 +1293,9 @@ void oscPlay(Oscillator osc, byte[] timers, byte[] pointers, short[][] freqs, sh
 }
 void textDraw(char[] text, byte len, short xPos, short yPos, byte size){
   for(byte i = 0; i < len; i++){
-    if(text[i] < 32 || text[i] > 90)
+    if(text[i] < ' ' || text[i] > 'Z')
       return;
-    characters[text[i]-32].draw(i*size+xPos, yPos, size, size);
+    characters[text[i]-' '].draw(i*size+xPos, yPos, size, size);
       
   }
 }
