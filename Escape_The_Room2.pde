@@ -45,20 +45,37 @@ final byte OUTSIDE_GROUND = 65;
 final byte OUTSIDE_PILLAR_STEM = 66;
 final byte COIN_FRAME_ONE = 5;
 final byte COIN_SCORE = 42;
+final byte COIN_FRAME_TRIGGER = 15;
+final byte MAX_COIN_FRAME = 2;
 
+//Information for positioning and defining the bounding box for the goal
+final byte GOAL_WIDTH = 25;
+final byte GOAL_LEFT = 12;
+final byte GOAL_RIGHT = GOAL_LEFT+GOAL_WIDTH;
+
+//Information for the position of the arrow that shows up pointing to the goal
+final byte ARROW_WIDTH = 50;
+final byte ARROW_X_RIGHT = GOAL_RIGHT+10;
+final byte ARROW_X_LEFT = GOAL_LEFT-ARROW_WIDTH-10;
+
+//HUD string lengths
 final byte BONUS_TEXT_LENGTH = 6;
 final byte CURR_SCORE_TEXT_LENGTH = 12;
 final byte HIGH_SCORE_TEXT_LENGTH = 11;
 final byte LIVES_TEXT_LENGTH = 9;
 final byte SCORE_BONUS_TEXT_LENGTH = 12;
 final byte TIME_REMAIN_TEXT_LENGTH = 9;
+
+//Information for the HUD text
 final byte HUD_TEXT_SIZE = 8;
 final byte HUD_TEXT_PADDING = HUD_TEXT_SIZE+3;
 final short HUD_TEXT_POS = 55;
 
+//Between-screen string lengths
 final byte READY_TEXT_LENGTH = 6;
 final byte GAME_OVER_TEXT_LENGTH = 9;
 
+//Menu text information
 final byte MENU_TEXT_LENGTH = 13;
 final byte MENU_TEXT_SIZE = 24;
 final short MENU_X_POS = 256;
@@ -156,6 +173,8 @@ byte compNum = 0;
 byte isSmoothed = 1;
 byte mode = 0;
 byte coinFrame = 0;
+byte arrowXPos = ARROW_X_RIGHT;
+byte arrowDirection = ARROW_WIDTH;
 
 short titleTime = 0; //2048 seems to be a key lock for up and down; bits 9 and 10 seem to be used for the mode
 short secondScore = 0;
@@ -1106,6 +1125,8 @@ void loadLevel3(byte enemySpeed){
     pillarRef[0] = INSIDE_PILLAR_TOP;
     pillarRef[1] = INSIDE_PILLAR_STEM;
     zeroLevel(16, 12, levelData, nonRedColours, arrowPos[0]);
+    arrowXPos = ARROW_X_LEFT;
+    arrowDirection = -ARROW_WIDTH;
     goalCount = 12;
     if(randomNum > 0 && (oneUpFlash & 64) == 64)
       endPoint++;
@@ -1322,6 +1343,8 @@ void initPauseSound(){
 
 //Zeros out the background data
 void zeroLevel(int sizeX, int sizeY, byte[][] back, byte[] gb, byte arrowPoses){
+  arrowXPos = ARROW_X_RIGHT;
+  arrowDirection = ARROW_WIDTH;
   for(int i = 0; i < sizeX; i++){
     for(int j = 0; j < sizeY; j++){
       back[i][j]&=BG_NONE;
@@ -1437,9 +1460,9 @@ void drawBack(byte frameCounter, Player currPlayer, TextMod mod, byte[][] backgr
   int tileY = 0;
   
   //This is used to advance the frames of the coins' animation
-  if((frameCounter & 15) == 15){
+  if((frameCounter & COIN_FRAME_TRIGGER) == COIN_FRAME_TRIGGER){
     coinFrame++;
-    if(coinFrame > 2)
+    if(coinFrame > MAX_COIN_FRAME)
       coinFrame = 0;
   }
   
@@ -1514,23 +1537,11 @@ void drawBack(byte frameCounter, Player currPlayer, TextMod mod, byte[][] backgr
           break;
         case BG_EXIT:
           if(coinCount[0] >= goalCount){
-            if(currPlayer.returnX()+50 >= tileX+12 && currPlayer.returnX() <= tileX+37 && currPlayer.returnY()+50 >= tileY+7 && currPlayer.returnY() <= tileY+42)
+            if(currPlayer.returnX()+50 >= tileX+GOAL_LEFT && currPlayer.returnX() <= tileX+GOAL_RIGHT && currPlayer.returnY()+50 >= tileY+7 && currPlayer.returnY() <= tileY+42)
               arrowPosition[0]|=8;
             background[i][j]+=8;
-            if(((background[i][j] >> 3) & 31) >= 30)
-              background[i][j]&=7;
-            else{
-              if(((background[i][j] >> 3) & 31) >= 15){
-                int arrowPos = tileX+47;
-                int arrowDirection = 50;
-                if((arrowPosition[0] & 1) == 0){
-                    arrowPos = tileX-48;
-                    arrowDirection = -50;
-                }
-                characters[55].draw(arrowPos, tileY+10, arrowDirection, 25);
-
-              }
-            }
+            if((frameCounter & 31) >= 15)
+              characters[55].draw(tileX+arrowXPos, tileY+10, arrowDirection, 25);
           }
           characters[38].draw(tileX+12, tileY+7);
           break;
