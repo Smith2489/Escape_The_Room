@@ -1239,6 +1239,8 @@ void loadLevel7(byte speed){
   pillarRef[0] = INSIDE_PILLAR_TOP;
   pillarRef[1] = INSIDE_PILLAR_STEM;
   zeroLevel(16, 12, levelData, nonRedColours, arrowPos[0]);
+  arrowXPos = ARROW_X_LEFT;
+  arrowDirection = -ARROW_WIDTH;
   goalCount = 12;
   endPoint = 5;
   placeTile(7, 10, BG_GROUND, levelData);
@@ -1343,6 +1345,7 @@ void initPauseSound(){
 
 //Zeros out the background data
 void zeroLevel(int sizeX, int sizeY, byte[][] back, byte[] gb, byte arrowPoses){
+  scoreQueue.clear();
   arrowXPos = ARROW_X_RIGHT;
   arrowDirection = ARROW_WIDTH;
   for(int i = 0; i < sizeX; i++){
