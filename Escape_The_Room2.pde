@@ -20,7 +20,7 @@ final byte GO_SIZE = 24;
 final byte MAX_LEVEL = 7;
 
 //IDs for the background tiles
-final byte BG_NONE = -8;
+final byte BG_NONE = 0;
 final byte BG_GROUND = 1;
 final byte BG_COIN = 2;
 final byte BG_EXIT = 3;
@@ -1350,7 +1350,7 @@ void zeroLevel(int sizeX, int sizeY, byte[][] back, byte[] gb, byte arrowPoses){
   arrowDirection = ARROW_WIDTH;
   for(int i = 0; i < sizeX; i++){
     for(int j = 0; j < sizeY; j++){
-      back[i][j]&=BG_NONE;
+      back[i][j] = BG_NONE;
     }
   }
   switch(arrowPoses & 16){
@@ -1358,17 +1358,17 @@ void zeroLevel(int sizeX, int sizeY, byte[][] back, byte[] gb, byte arrowPoses){
       gb[0]= (byte)(-92);
       gb[1] = (byte)(-24);
       for(int i = 0; i < sizeX; i++)
-        back[i][sizeY-1] = BG_NONE|BG_GROUND;
+        back[i][sizeY-1] = BG_GROUND;
       break;
     default:
       gb[0]= gb[1] = 0;
      for(int i = 0; i < 16; i++){
-       levelData[i][0] = BG_NONE|BG_GROUND;
-       levelData[i][11] = BG_NONE|BG_GROUND;
+       levelData[i][0] = BG_GROUND;
+       levelData[i][11] = BG_GROUND;
      }
      for(int i = 1; i < 11; i++){
-       levelData[0][i] = BG_NONE|BG_GROUND;
-       levelData[15][i] = BG_NONE|BG_GROUND;
+       levelData[0][i] = BG_GROUND;
+       levelData[15][i] = BG_GROUND;
      }
      break;
   }
@@ -1376,7 +1376,7 @@ void zeroLevel(int sizeX, int sizeY, byte[][] back, byte[] gb, byte arrowPoses){
 }
 
 //Functions for assigning background tiles their IDs
-void placeTile(int xPos, int yPos, int type, byte[][] back){
+void placeTile(int xPos, int yPos, byte type, byte[][] back){
   if(xPos < 0)
     xPos = 0;
    else if(xPos >= SCREEN_WIDTH_TILES)
@@ -1385,10 +1385,10 @@ void placeTile(int xPos, int yPos, int type, byte[][] back){
     yPos = 0;
    else if(yPos >= SCREEN_HEIGHT_TILES)
      yPos = SCREEN_HEIGHT_TILES-1;
-   back[xPos][yPos] = (byte)(type+(((type & 2) == 2) ? 0 : -8));
+   back[xPos][yPos] = type;
 }
 
-void placeHoriz(int startIndex, int yIndex, int size, int type, byte[][] back){
+void placeHoriz(int startIndex, int yIndex, int size, byte type, byte[][] back){
   if(size > SCREEN_WIDTH_TILES)
     size = SCREEN_WIDTH_TILES;
    else if(size < 1)
@@ -1403,11 +1403,11 @@ void placeHoriz(int startIndex, int yIndex, int size, int type, byte[][] back){
      size = (startIndex+size-SCREEN_WIDTH_TILES);
      
    for(; i < size; i++){
-     back[i+startIndex][yIndex] = (byte)(type+(((type & 2) == 2) ? 0 : BG_NONE));
+     back[i+startIndex][yIndex] = type;
    }
 }
 
-void placeVert(int xIndex, int startIndex, int size, int type, byte[][] back){
+void placeVert(int xIndex, int startIndex, int size, byte type, byte[][] back){
   if(size > SCREEN_HEIGHT_TILES)
     size = SCREEN_HEIGHT_TILES;
    else if(size < 1)
@@ -1423,11 +1423,11 @@ void placeVert(int xIndex, int startIndex, int size, int type, byte[][] back){
      size = (startIndex+size-SCREEN_HEIGHT_TILES);
      
    for(; i < size; i++){
-     back[xIndex][i+startIndex] = (byte)(type+(((type & 2) == 2) ? 0 : -8));
+     back[xIndex][i+startIndex] = type;
    }
 }
 
-void placeRect(int startX, int startY, int wid, int heigh, int type, byte[][] back){
+void placeRect(int startX, int startY, int wid, int heigh, byte type, byte[][] back){
   if(wid >= SCREEN_WIDTH_TILES)
     wid = SCREEN_WIDTH_TILES-1;
    else if(wid < 1)
@@ -1439,7 +1439,7 @@ void placeRect(int startX, int startY, int wid, int heigh, int type, byte[][] ba
    for(int i = 0; i < wid; i++){
      for(int j = 0; j < heigh; j++){
        if(i >= 0 && i+startX < SCREEN_WIDTH_TILES && j >= 0 && j+startY < SCREEN_HEIGHT_TILES)
-         back[i+startX][j+startY] = (byte)(type+(((type & 2) == 2) ? 0 : -8));
+         back[i+startX][j+startY] = type;
      }
    }
 }
@@ -1473,7 +1473,7 @@ void drawBack(byte frameCounter, Player currPlayer, TextMod mod, byte[][] backgr
     tileX = TILE_SIZE*i;
     for(int j = 0; j < SCREEN_HEIGHT_TILES; j++){
       tileY = TILE_SIZE*j;
-      switch((background[i][j] & 7)){
+      switch(background[i][j]){
         case BG_GROUND:
            if(currPlayer.returnY()+25 > tileY && currPlayer.returnY()+25 < tileY+50){
             if(currPlayer.returnX()+50 >= tileX && currPlayer.returnX() <= tileX+25){
@@ -1542,7 +1542,6 @@ void drawBack(byte frameCounter, Player currPlayer, TextMod mod, byte[][] backgr
           if(coinCount[0] >= goalCount){
             if(currPlayer.returnX()+50 >= tileX+GOAL_LEFT && currPlayer.returnX() <= tileX+GOAL_RIGHT && currPlayer.returnY()+50 >= tileY+7 && currPlayer.returnY() <= tileY+42)
               arrowPosition[0]|=8;
-            background[i][j]+=8;
             if((frameCounter & 31) >= 15)
               characters[55].draw(tileX+arrowXPos, tileY+10, arrowDirection, 25);
           }
